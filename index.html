@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" data-theme="dark">
 
 <head>
     <meta charset="UTF-8">
@@ -26,6 +26,41 @@
             --shadow-lg: 0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1);
             --border-radius: 8px;
             --border-radius-lg: 12px;
+            
+            /* JSON syntax highlighting - Light mode */
+            --json-key-color: #0969da;
+            --json-string-color: #0a3069;
+            --json-number-color: #0550ae;
+            --json-boolean-color: #8250df;
+            --json-null-color: #656d76;
+            --json-punctuation-color: #24292f;
+        }
+
+        /* Dark mode variables - Modern Design */
+        [data-theme="dark"] {
+            --primary-color: #00d4ff;
+            --primary-hover: #00b8e6;
+            --secondary-color: #a1a1aa;
+            --success-color: #22c55e;
+            --error-color: #f87171;
+            --warning-color: #fbbf24;
+            --bg-primary: #18181b;
+            --bg-secondary: #09090b;
+            --bg-accent: #27272a;
+            --border-color: #3f3f46;
+            --text-primary: #ffffff;
+            --text-secondary: #d4d4d8;
+            --shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.4);
+            --shadow-md: 0 4px 6px -1px rgb(0 0 0 / 0.5), 0 2px 4px -2px rgb(0 0 0 / 0.5);
+            --shadow-lg: 0 10px 15px -3px rgb(0 0 0 / 0.6), 0 4px 6px -4px rgb(0 0 0 / 0.6);
+            
+            /* JSON syntax highlighting - Modern Dark mode */
+            --json-key-color: #00d4ff;
+            --json-string-color: #a7f3d0;
+            --json-number-color: #fbbf24;
+            --json-boolean-color: #c084fc;
+            --json-null-color: #71717a;
+            --json-punctuation-color: #d4d4d8;
         }
 
         * {
@@ -39,6 +74,7 @@
             background-color: var(--bg-secondary);
             color: var(--text-primary);
             line-height: 1.6;
+            transition: background-color 0.3s ease, color 0.3s ease;
         }
 
         .container {
@@ -95,13 +131,26 @@
             color: var(--primary-color);
         }
 
+        /* Dark mode toggle - now integrated with button styles */
+        .theme-toggle {
+            justify-content: center;
+        }
+
+        .theme-toggle i {
+            font-size: 1rem;
+        }
+
         /* Header */
         .header {
-            background: linear-gradient(135deg, var(--primary-color) 0%, #1e40af 100%);
+            background: linear-gradient(135deg, var(--primary-color) 0%, #3b82f6 100%);
             color: white;
             padding: 2rem 0;
             position: relative;
             overflow: hidden;
+        }
+
+        [data-theme="dark"] .header {
+            background: linear-gradient(135deg, var(--primary-color) 0%, #6366f1 100%);
         }
 
         .header::before {
@@ -157,12 +206,162 @@
             border-radius: var(--border-radius-lg);
             padding: 1.5rem;
             box-shadow: var(--shadow-sm);
-            transition: all 0.3s ease;
+            transition: all 0.3s ease, background-color 0.3s ease, border-color 0.3s ease;
         }
 
         .card:hover {
             box-shadow: var(--shadow-md);
             border-color: var(--primary-color);
+        }
+
+        /* Highlighted Payload Input Card */
+        .payload-input-card {
+            border: 2px solid var(--primary-color);
+            background: linear-gradient(135deg, var(--bg-primary) 0%, rgba(5, 151, 156, 0.05) 100%);
+            box-shadow: var(--shadow-md);
+            position: relative;
+            animation: subtle-pulse 3s ease-in-out infinite;
+        }
+
+        @keyframes subtle-pulse {
+            0%, 100% {
+                box-shadow: var(--shadow-md);
+            }
+            50% {
+                box-shadow: 0 4px 20px rgba(5, 151, 156, 0.2);
+            }
+        }
+
+
+        .payload-input-card h2 {
+            color: var(--primary-color);
+            font-weight: 700;
+        }
+
+        .payload-input-card h2 i {
+            color: var(--primary-color);
+            text-shadow: 0 0 8px rgba(5, 151, 156, 0.3);
+        }
+
+        [data-theme="dark"] .payload-input-card {
+            border-color: var(--primary-color);
+            background: linear-gradient(135deg, var(--bg-primary) 0%, rgba(0, 212, 255, 0.08) 100%);
+            box-shadow: 0 4px 20px rgba(0, 212, 255, 0.15);
+            animation: subtle-pulse-dark 3s ease-in-out infinite;
+        }
+
+        @keyframes subtle-pulse-dark {
+            0%, 100% {
+                box-shadow: 0 4px 20px rgba(0, 212, 255, 0.15);
+            }
+            50% {
+                box-shadow: 0 4px 25px rgba(0, 212, 255, 0.25);
+            }
+        }
+
+        [data-theme="dark"] .payload-input-card h2 i {
+            text-shadow: 0 0 12px rgba(0, 212, 255, 0.4);
+        }
+
+        /* Highlighted Decoder Function Card */
+        .decoder-function-card {
+            border: 2px solid var(--warning-color);
+            background: linear-gradient(135deg, var(--bg-primary) 0%, rgba(251, 191, 36, 0.05) 100%);
+            box-shadow: var(--shadow-md);
+            position: relative;
+            animation: decoder-pulse 3s ease-in-out infinite;
+        }
+
+        @keyframes decoder-pulse {
+            0%, 100% {
+                box-shadow: var(--shadow-md);
+            }
+            50% {
+                box-shadow: 0 4px 20px rgba(251, 191, 36, 0.2);
+            }
+        }
+
+
+        .decoder-function-card h2 {
+            color: var(--warning-color);
+            font-weight: 700;
+        }
+
+        .decoder-function-card h2 i {
+            color: var(--warning-color);
+            text-shadow: 0 0 8px rgba(251, 191, 36, 0.3);
+        }
+
+        [data-theme="dark"] .decoder-function-card {
+            border-color: var(--warning-color);
+            background: linear-gradient(135deg, var(--bg-primary) 0%, rgba(251, 191, 36, 0.08) 100%);
+            box-shadow: 0 4px 20px rgba(251, 191, 36, 0.15);
+            animation: decoder-pulse-dark 3s ease-in-out infinite;
+        }
+
+        @keyframes decoder-pulse-dark {
+            0%, 100% {
+                box-shadow: 0 4px 20px rgba(251, 191, 36, 0.15);
+            }
+            50% {
+                box-shadow: 0 4px 25px rgba(251, 191, 36, 0.25);
+            }
+        }
+
+        [data-theme="dark"] .decoder-function-card h2 i {
+            text-shadow: 0 0 12px rgba(251, 191, 36, 0.4);
+        }
+
+        /* Priority Badge */
+        .priority-badge {
+            background: linear-gradient(45deg, var(--success-color), var(--primary-color));
+            color: white;
+            font-size: 0.7rem;
+            font-weight: 700;
+            padding: 0.25rem 0.5rem;
+            border-radius: 12px;
+            margin-left: 0.5rem;
+            text-shadow: none;
+            letter-spacing: 0.5px;
+            animation: badge-glow 2s ease-in-out infinite alternate;
+        }
+
+        /* Required Badge for Decoder Function */
+        .decoder-function-card .priority-badge {
+            background: linear-gradient(45deg, var(--warning-color), var(--error-color));
+            animation: required-badge-glow 2s ease-in-out infinite alternate;
+        }
+
+        @keyframes badge-glow {
+            0% {
+                box-shadow: 0 0 5px rgba(5, 151, 156, 0.5);
+            }
+            100% {
+                box-shadow: 0 0 15px rgba(5, 151, 156, 0.8);
+            }
+        }
+
+        [data-theme="dark"] .priority-badge {
+            background: linear-gradient(45deg, var(--success-color), var(--primary-color));
+            animation: badge-glow-dark 2s ease-in-out infinite alternate;
+        }
+
+        @keyframes badge-glow-dark {
+            0% {
+                box-shadow: 0 0 8px rgba(0, 212, 255, 0.6);
+            }
+            100% {
+                box-shadow: 0 0 20px rgba(0, 212, 255, 0.9);
+            }
+        }
+
+        @keyframes required-badge-glow {
+            0% {
+                box-shadow: 0 0 5px rgba(251, 191, 36, 0.5);
+            }
+            100% {
+                box-shadow: 0 0 15px rgba(251, 191, 36, 0.8);
+            }
         }
 
         .card h2 {
@@ -207,7 +406,21 @@
             font-size: 0.9rem;
             font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', monospace;
             background-color: var(--bg-primary);
+            color: var(--text-primary);
             transition: all 0.3s ease;
+        }
+
+        [data-theme="dark"] .form-input,
+        [data-theme="dark"] .form-textarea {
+            color: var(--text-primary);
+            background-color: var(--bg-primary);
+            border-color: var(--border-color);
+        }
+
+        [data-theme="dark"] .form-input::placeholder,
+        [data-theme="dark"] .form-textarea::placeholder {
+            color: var(--text-secondary);
+            opacity: 0.7;
         }
 
         .form-input:focus,
@@ -239,6 +452,10 @@
             height: 18px;
             accent-color: var(--primary-color);
             cursor: pointer;
+        }
+
+        [data-theme="dark"] .checkbox-container {
+            color: var(--text-primary);
         }
 
         .checkmark {
@@ -329,6 +546,17 @@
             background-color: var(--border-color);
         }
 
+        [data-theme="dark"] .btn-secondary {
+            color: var(--text-primary);
+            background-color: var(--bg-accent);
+            border-color: var(--border-color);
+        }
+
+        [data-theme="dark"] .btn-secondary:hover {
+            background-color: var(--border-color);
+            color: var(--text-primary);
+        }
+
         .btn-danger {
             background-color: var(--error-color);
             color: white;
@@ -357,6 +585,16 @@
             background-color: #fef2f2;
         }
 
+        [data-theme="dark"] .result-success {
+            border-color: var(--success-color);
+            background-color: rgba(34, 197, 94, 0.08);
+        }
+
+        [data-theme="dark"] .result-error {
+            border-color: var(--error-color);
+            background-color: rgba(248, 113, 113, 0.08);
+        }
+
         .result-content {
             font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', monospace;
             font-size: 0.85rem;
@@ -372,10 +610,16 @@
         }
 
         .info-card {
-            background: linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%);
+            background: linear-gradient(135deg, var(--bg-accent) 0%, var(--bg-primary) 100%);
             border: 1px solid var(--border-color);
             border-radius: var(--border-radius-lg);
             padding: 1.5rem;
+            transition: all 0.3s ease, background 0.3s ease, border-color 0.3s ease;
+        }
+
+        [data-theme="dark"] .info-card {
+            background: linear-gradient(135deg, var(--bg-accent) 0%, var(--bg-primary) 100%);
+            border: 1px solid var(--border-color);
         }
 
         .info-list {
@@ -435,6 +679,13 @@
             font-size: 0.8rem;
             line-height: 1.4;
             overflow-x: auto;
+            transition: background-color 0.3s ease, color 0.3s ease;
+        }
+
+        [data-theme="dark"] .example-code {
+            background: #0c0c0c;
+            color: #f5f5f5;
+            border: 1px solid var(--border-color);
         }
 
         .example-payload {
@@ -470,6 +721,21 @@
 
         .status-error {
             background-color: #fee2e2;
+            color: var(--error-color);
+        }
+
+        [data-theme="dark"] .status-success {
+            background-color: rgba(34, 197, 94, 0.15);
+            color: var(--success-color);
+        }
+
+        [data-theme="dark"] .status-warning {
+            background-color: rgba(251, 191, 36, 0.15);
+            color: var(--warning-color);
+        }
+
+        [data-theme="dark"] .status-error {
+            background-color: rgba(248, 113, 113, 0.15);
             color: var(--error-color);
         }
 
@@ -538,6 +804,7 @@
                 justify-content: center;
             }
 
+
             .header h1 {
                 font-size: 2rem;
             }
@@ -563,6 +830,12 @@
             .cookie-notice {
                 flex-direction: column;
                 align-items: stretch;
+            }
+
+            .priority-badge {
+                font-size: 0.6rem;
+                padding: 0.2rem 0.4rem;
+                margin-left: 0.3rem;
             }
         }
 
@@ -594,19 +867,31 @@
 
         /* Syntax highlighting for JSON */
         .json-key {
-            color: #d73a49;
+            color: var(--json-key-color);
+            font-weight: 600;
         }
 
         .json-string {
-            color: #032f62;
+            color: var(--json-string-color);
         }
 
         .json-number {
-            color: #005cc5;
+            color: var(--json-number-color);
+            font-weight: 500;
         }
 
         .json-boolean {
-            color: #d73a49;
+            color: var(--json-boolean-color);
+            font-weight: 500;
+        }
+
+        .json-null {
+            color: var(--json-null-color);
+            font-style: italic;
+        }
+
+        .json-punctuation {
+            color: var(--json-punctuation-color);
         }
 
         /* Copy button styles */
@@ -622,6 +907,17 @@
         }
 
         .copy-btn:hover, .paste-btn:hover {
+            color: var(--primary-color);
+            background-color: var(--bg-accent);
+        }
+
+        [data-theme="dark"] .copy-btn,
+        [data-theme="dark"] .paste-btn {
+            color: var(--text-secondary);
+        }
+
+        [data-theme="dark"] .copy-btn:hover,
+        [data-theme="dark"] .paste-btn:hover {
             color: var(--primary-color);
             background-color: var(--bg-accent);
         }
@@ -682,7 +978,7 @@
             <div class="grid">
                 <div class="main-content">
                     <!-- Decoder Function Card -->
-                    <div class="card">
+                    <div class="card decoder-function-card">
                         <h2>
                             <i class="fas fa-code"></i>
                             Decoder Function
@@ -702,7 +998,7 @@
                                     </button>
                                     <button id="validate-decoder" class="btn btn-secondary">
                                         <i class="fas fa-check-circle"></i>
-                                        Validate Decoder
+                                        Validate
                                     </button>
                                 </div>
                             </label>
@@ -741,7 +1037,7 @@
 
                 <aside class="sidebar">
                     <!-- Payload Input Card -->
-                    <div class="card">
+                    <div class="card payload-input-card">
                         <h2>
                             <i class="fas fa-terminal"></i>
                             Payload Input & Decoding
@@ -782,6 +1078,10 @@
                             <i class="fas fa-tools"></i>
                             Actions
                         </h3>
+                        <button class="theme-toggle btn btn-secondary" id="theme-toggle" title="Toggle dark mode" style="width: 100%; margin-bottom: 0.5rem;">
+                            <i class="fas fa-moon" id="theme-icon"></i>
+                            <span id="theme-text">Dark Mode</span>
+                        </button>
                         <button id="clear-all" class="btn btn-danger" style="width: 100%; margin-bottom: 0.5rem;">
                             <i class="fas fa-trash"></i>
                             Clear All Data
@@ -861,6 +1161,37 @@
     </footer>
 
     <script>
+        // Dark mode theme management
+        function initializeTheme() {
+            const savedTheme = localStorage.getItem('theme') || 'dark'; // Default to dark mode
+            const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+            const theme = savedTheme === 'auto' ? (prefersDark ? 'dark' : 'light') : savedTheme;
+            
+            setTheme(theme);
+        }
+
+        function setTheme(theme) {
+            document.documentElement.setAttribute('data-theme', theme);
+            localStorage.setItem('theme', theme);
+            
+            const themeIcon = document.getElementById('theme-icon');
+            const themeText = document.getElementById('theme-text');
+            
+            if (theme === 'dark') {
+                themeIcon.className = 'fas fa-sun';
+                themeText.textContent = 'Light Mode';
+            } else {
+                themeIcon.className = 'fas fa-moon';
+                themeText.textContent = 'Dark Mode';
+            }
+        }
+
+        function toggleTheme() {
+            const currentTheme = document.documentElement.getAttribute('data-theme');
+            const newTheme = currentTheme === 'dark' ? 'light' : 'dark';
+            setTheme(newTheme);
+        }
+
         // Enhanced storage management using localStorage instead of cookies
         function setStorage(name, value) {
             try {
@@ -986,6 +1317,38 @@
             return bytes;
         }
 
+        // JSON syntax highlighting function
+        function highlightJSON(jsonString) {
+            // Escape HTML entities first
+            jsonString = jsonString
+                .replace(/&/g, '&amp;')
+                .replace(/</g, '&lt;')
+                .replace(/>/g, '&gt;');
+            
+            return jsonString
+                // Highlight object keys
+                .replace(/("[\w\s_.-]+")(\s*:\s*)/g, '<span class="json-key">$1</span><span class="json-punctuation">$2</span>')
+                // Highlight string values
+                .replace(/:\s*("(?:[^"\\]|\\.)*")/g, ': <span class="json-string">$1</span>')
+                // Highlight numbers (including decimals and negative numbers)
+                .replace(/:\s*(-?\d+\.?\d*(?:[eE][+-]?\d+)?)/g, ': <span class="json-number">$1</span>')
+                // Highlight booleans
+                .replace(/:\s*(true|false)/g, ': <span class="json-boolean">$1</span>')
+                // Highlight null values
+                .replace(/:\s*(null)/g, ': <span class="json-null">$1</span>')
+                // Highlight array values (strings, numbers, booleans, null)
+                .replace(/\[\s*("(?:[^"\\]|\\.)*")/g, '[<span class="json-string">$1</span>')
+                .replace(/,\s*("(?:[^"\\]|\\.)*")/g, ', <span class="json-string">$1</span>')
+                .replace(/\[\s*(-?\d+\.?\d*(?:[eE][+-]?\d+)?)/g, '[<span class="json-number">$1</span>')
+                .replace(/,\s*(-?\d+\.?\d*(?:[eE][+-]?\d+)?)/g, ', <span class="json-number">$1</span>')
+                .replace(/\[\s*(true|false)/g, '[<span class="json-boolean">$1</span>')
+                .replace(/,\s*(true|false)/g, ', <span class="json-boolean">$1</span>')
+                .replace(/\[\s*(null)/g, '[<span class="json-null">$1</span>')
+                .replace(/,\s*(null)/g, ', <span class="json-null">$1</span>')
+                // Highlight punctuation
+                .replace(/([{}[\],])/g, '<span class="json-punctuation">$1</span>');
+        }
+
         // Enhanced result display with syntax highlighting
         function updateResult(data, isError = false) {
             const resultElement = document.getElementById('decode-result');
@@ -994,7 +1357,9 @@
             resultContainer.className = `result-container ${isError ? 'result-error' : 'result-success'}`;
 
             if (typeof data === 'object') {
-                resultElement.innerHTML = `<pre class="result-content">${JSON.stringify(data, null, 2)}</pre>`;
+                const jsonString = JSON.stringify(data, null, 2);
+                const highlightedJSON = highlightJSON(jsonString);
+                resultElement.innerHTML = `<pre class="result-content">${highlightedJSON}</pre>`;
             } else {
                 resultElement.innerHTML = `<div class="result-content">${data}</div>`;
             }
@@ -1592,6 +1957,12 @@ function decodeUplink(input) {
 
         // Initialize the application
         document.addEventListener('DOMContentLoaded', function() {
+            // Initialize theme
+            initializeTheme();
+            
+            // Setup theme toggle button
+            document.getElementById('theme-toggle').addEventListener('click', toggleTheme);
+            
             // Setup drag and drop functionality
             setupDragAndDrop();
 
