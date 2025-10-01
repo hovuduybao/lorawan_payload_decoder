@@ -1,0 +1,1702 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>LoRaWAN Payload Decoder | Wi6labs</title>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --primary-color: #05979c;
+            --primary-hover: #740874a4;
+            --secondary-color: #64748b;
+            --success-color: #059669;
+            --error-color: #dc2626;
+            --warning-color: #8a4900;
+            --bg-primary: #ffffff;
+            --bg-secondary: #f8fafc;
+            --bg-accent: #f1f5f9;
+            --border-color: #e2e8f0;
+            --text-primary: #0f172a;
+            --text-secondary: #475569;
+            --shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.05);
+            --shadow-md: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
+            --shadow-lg: 0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1);
+            --border-radius: 8px;
+            --border-radius-lg: 12px;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background-color: var(--bg-secondary);
+            color: var(--text-primary);
+            line-height: 1.6;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 0 1rem;
+        }
+
+        /* Top Navigation */
+        .top-nav {
+            background: var(--bg-primary);
+            border-bottom: 1px solid var(--border-color);
+            padding: 0.75rem 0;
+            font-size: 0.9rem;
+        }
+
+        .top-nav-content {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 1rem;
+        }
+
+        .copyright {
+            color: var(--text-secondary);
+            font-size: 0.85rem;
+        }
+
+        .copyright a {
+            color: var(--primary-color);
+            text-decoration: none;
+            transition: color 0.3s ease;
+        }
+
+        .copyright a:hover {
+            color: var(--primary-hover);
+            text-decoration: underline;
+        }
+
+        .nav-links {
+            display: flex;
+            gap: 2rem;
+        }
+
+        .nav-links a {
+            color: var(--text-secondary);
+            text-decoration: none;
+            font-size: 0.9rem;
+            transition: color 0.3s ease;
+        }
+
+        .nav-links a:hover {
+            color: var(--primary-color);
+        }
+
+        /* Header */
+        .header {
+            background: linear-gradient(135deg, var(--primary-color) 0%, #1e40af 100%);
+            color: white;
+            padding: 2rem 0;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .header::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><defs><pattern id="grid" width="10" height="10" patternUnits="userSpaceOnUse"><path d="M 10 0 L 0 0 0 10" fill="none" stroke="rgba(255,255,255,0.1)" stroke-width="0.5"/></pattern></defs><rect width="100" height="100" fill="url(%23grid)"/></svg>');
+            opacity: 0.3;
+        }
+
+        .header-content {
+            position: relative;
+            z-index: 1;
+        }
+
+        .header h1 {
+            font-size: 2.5rem;
+            font-weight: 700;
+            margin-bottom: 0.5rem;
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+        }
+
+        .header h1 i {
+            font-size: 2rem;
+        }
+
+        .header p {
+            font-size: 1.2rem;
+            opacity: 0.9;
+            max-width: 600px;
+        }
+
+        /* Main content */
+        .main {
+            padding: 2rem 0;
+        }
+
+        .grid {
+            display: grid;
+            grid-template-columns: 1fr 400px;
+            gap: 2rem;
+            margin-bottom: 2rem;
+        }
+
+        .card {
+            background: var(--bg-primary);
+            border: 1px solid var(--border-color);
+            border-radius: var(--border-radius-lg);
+            padding: 1.5rem;
+            box-shadow: var(--shadow-sm);
+            transition: all 0.3s ease;
+        }
+
+        .card:hover {
+            box-shadow: var(--shadow-md);
+            border-color: var(--primary-color);
+        }
+
+        .card h2 {
+            color: var(--text-primary);
+            font-size: 1.5rem;
+            font-weight: 600;
+            margin-bottom: 1rem;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .card h3 {
+            color: var(--text-primary);
+            font-size: 1.2rem;
+            font-weight: 500;
+            margin-bottom: 0.75rem;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        /* Form elements */
+        .form-group {
+            margin-bottom: 1.5rem;
+        }
+
+        .form-label {
+            display: block;
+            font-weight: 500;
+            color: var(--text-primary);
+            margin-bottom: 0.5rem;
+            font-size: 0.9rem;
+        }
+
+        .form-input,
+        .form-textarea {
+            width: 100%;
+            padding: 0.75rem;
+            border: 1px solid var(--border-color);
+            border-radius: var(--border-radius);
+            font-size: 0.9rem;
+            font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', monospace;
+            background-color: var(--bg-primary);
+            transition: all 0.3s ease;
+        }
+
+        .form-input:focus,
+        .form-textarea:focus {
+            outline: none;
+            border-color: var(--primary-color);
+            box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
+        }
+
+        .form-textarea {
+            min-height: 200px;
+            resize: vertical;
+            line-height: 1.5;
+        }
+
+        /* Checkbox styling */
+        .checkbox-container {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            cursor: pointer;
+            font-size: 0.9rem;
+            color: var(--text-primary);
+            margin-bottom: 0;
+        }
+
+        .checkbox-container input[type="checkbox"] {
+            width: 18px;
+            height: 18px;
+            accent-color: var(--primary-color);
+            cursor: pointer;
+        }
+
+        .checkmark {
+            display: none;
+        }
+
+        /* Drag and drop styling */
+        .drag-drop-zone {
+            position: relative;
+        }
+
+        .form-textarea.drag-over {
+            border-color: var(--primary-color);
+            background-color: rgba(37, 99, 235, 0.05);
+            border-style: dashed;
+            border-width: 2px;
+        }
+
+        .drag-drop-overlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(37, 99, 235, 0.1);
+            border: 2px dashed var(--primary-color);
+            border-radius: var(--border-radius);
+            display: none;
+            align-items: center;
+            justify-content: center;
+            z-index: 10;
+            pointer-events: none;
+        }
+
+        .drag-drop-overlay.active {
+            display: flex;
+        }
+
+        .drag-drop-text {
+            background: var(--bg-primary);
+            padding: 1rem 2rem;
+            border-radius: var(--border-radius);
+            box-shadow: var(--shadow-md);
+            font-weight: 500;
+            color: var(--primary-color);
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .drag-drop-text i {
+            font-size: 1.5rem;
+        }
+
+        /* Buttons */
+        .btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            padding: 0.75rem 1.5rem;
+            border: none;
+            border-radius: var(--border-radius);
+            font-weight: 500;
+            font-size: 0.9rem;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            text-decoration: none;
+        }
+
+        .btn-primary {
+            background-color: var(--primary-color);
+            color: white;
+        }
+
+        .btn-primary:hover {
+            background-color: var(--primary-hover);
+            transform: translateY(-1px);
+            box-shadow: var(--shadow-md);
+        }
+
+        .btn-secondary {
+            background-color: var(--bg-accent);
+            color: var(--text-secondary);
+            border: 1px solid var(--border-color);
+        }
+
+        .btn-secondary:hover {
+            background-color: var(--border-color);
+        }
+
+        .btn-danger {
+            background-color: var(--error-color);
+            color: white;
+        }
+
+        .btn-danger:hover {
+            background-color: #b91c1c;
+        }
+
+        /* Result display */
+        .result-container {
+            background: var(--bg-accent);
+            border: 1px solid var(--border-color);
+            border-radius: var(--border-radius);
+            padding: 1rem;
+            margin-top: 1rem;
+        }
+
+        .result-success {
+            border-color: var(--success-color);
+            background-color: #f0fdf4;
+        }
+
+        .result-error {
+            border-color: var(--error-color);
+            background-color: #fef2f2;
+        }
+
+        .result-content {
+            font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', monospace;
+            font-size: 0.85rem;
+            white-space: pre-wrap;
+            overflow-x: auto;
+        }
+
+        /* Sidebar */
+        .sidebar {
+            display: flex;
+            flex-direction: column;
+            gap: 1.5rem;
+        }
+
+        .info-card {
+            background: linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%);
+            border: 1px solid var(--border-color);
+            border-radius: var(--border-radius-lg);
+            padding: 1.5rem;
+        }
+
+        .info-list {
+            list-style: none;
+            margin-top: 1rem;
+        }
+
+        .info-list li {
+            padding: 0.5rem 0;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            font-size: 0.9rem;
+            color: var(--text-secondary);
+        }
+
+        .info-list li i {
+            color: var(--primary-color);
+            width: 16px;
+            text-align: center;
+        }
+
+        /* Bottom section for supported formats */
+        .bottom-section {
+            margin-top: 3rem;
+        }
+
+        .formats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
+            gap: 1.5rem;
+            margin-top: 1rem;
+        }
+
+        /* Examples */
+        .example-card {
+            background: var(--bg-primary);
+            border: 1px solid var(--border-color);
+            border-radius: var(--border-radius);
+            padding: 1rem;
+            margin-top: 1rem;
+        }
+
+        .example-title {
+            font-weight: 500;
+            color: var(--text-primary);
+            margin-bottom: 0.5rem;
+            font-size: 0.9rem;
+        }
+
+        .example-code {
+            background: #1e293b;
+            color: #e2e8f0;
+            padding: 1rem;
+            border-radius: var(--border-radius);
+            font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', monospace;
+            font-size: 0.8rem;
+            line-height: 1.4;
+            overflow-x: auto;
+        }
+
+        .example-payload {
+            background: var(--bg-accent);
+            padding: 0.5rem;
+            border-radius: var(--border-radius);
+            font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', monospace;
+            font-size: 0.85rem;
+            border: 1px solid var(--border-color);
+            margin-top: 0.5rem;
+        }
+
+        /* Status indicators */
+        .status-indicator {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            padding: 0.25rem 0.75rem;
+            border-radius: 9999px;
+            font-size: 0.7rem;
+            font-weight: 500;
+        }
+
+        .status-success {
+            background-color: #dcfce7;
+            color: var(--success-color);
+        }
+
+        .status-warning {
+            background-color: #ff8800b9;
+            color: var(--warning-color);
+        }
+
+        .status-error {
+            background-color: #fee2e2;
+            color: var(--error-color);
+        }
+
+        /* Footer */
+        .footer {
+            background: var(--bg-primary);
+            border-top: 1px solid var(--border-color);
+            padding: 2rem 0;
+            margin-top: 3rem;
+            text-align: center;
+            color: var(--text-secondary);
+        }
+
+        .footer-content {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 1rem;
+        }
+
+        .footer-links {
+            display: flex;
+            gap: 2rem;
+        }
+
+        .footer-links a {
+            color: var(--text-secondary);
+            text-decoration: none;
+            font-size: 0.9rem;
+        }
+
+        .footer-links a:hover {
+            color: var(--primary-color);
+        }
+
+        /* Cookie notice */
+        .cookie-notice {
+            background: var(--bg-accent);
+            border: 1px solid var(--border-color);
+            border-radius: var(--border-radius);
+            padding: 1rem;
+            margin-top: 1rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 1rem;
+            font-size: 0.9rem;
+        }
+
+        /* Responsive design */
+        @media (max-width: 768px) {
+            .container {
+                padding: 0 0.75rem;
+            }
+
+            .top-nav-content {
+                flex-direction: column;
+                text-align: center;
+                gap: 0.75rem;
+            }
+
+            .nav-links {
+                gap: 1.5rem;
+                flex-wrap: wrap;
+                justify-content: center;
+            }
+
+            .header h1 {
+                font-size: 2rem;
+            }
+
+            .header p {
+                font-size: 1rem;
+            }
+
+            .grid {
+                grid-template-columns: 1fr;
+                gap: 1.5rem;
+            }
+
+            .formats-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .footer-content {
+                flex-direction: column;
+                text-align: center;
+            }
+
+            .cookie-notice {
+                flex-direction: column;
+                align-items: stretch;
+            }
+        }
+
+        /* Loading state */
+        .loading {
+            opacity: 0.6;
+            pointer-events: none;
+        }
+
+        .loading::after {
+            content: '';
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            width: 20px;
+            height: 20px;
+            margin: -10px 0 0 -10px;
+            border: 2px solid var(--primary-color);
+            border-radius: 50%;
+            border-top-color: transparent;
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin {
+            to {
+                transform: rotate(360deg);
+            }
+        }
+
+        /* Syntax highlighting for JSON */
+        .json-key {
+            color: #d73a49;
+        }
+
+        .json-string {
+            color: #032f62;
+        }
+
+        .json-number {
+            color: #005cc5;
+        }
+
+        .json-boolean {
+            color: #d73a49;
+        }
+
+        /* Copy button styles */
+        .copy-btn, .paste-btn {
+            background: none;
+            border: none;
+            color: var(--text-secondary);
+            cursor: pointer;
+            padding: 4px 8px;
+            border-radius: var(--border-radius);
+            transition: all 0.2s ease;
+            margin-left: 8px;
+        }
+
+        .copy-btn:hover, .paste-btn:hover {
+            color: var(--primary-color);
+            background-color: var(--bg-accent);
+        }
+
+        .copy-btn.copied {
+            color: var(--success-color);
+            background-color: #dcfce7;
+        }
+
+        .paste-btn.pasted {
+            color: var(--success-color);
+            background-color: #dcfce7;
+        }
+
+        .form-label {
+            display: flex;
+            align-items: center;
+        }
+
+        .button-group {
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+        }
+    </style>
+</head>
+
+<body>
+    <nav class="top-nav">
+        <div class="container">
+            <div class="top-nav-content">
+                <div class="copyright">
+                    © Created by <a href="https://www.linkedin.com/in/vu-duy-bao-ho/" target="_blank">HO Vu Duy Bao</a> at <a href="https://wi6labs.com" target="_blank">Wi6labs</a> - 2025. All rights reserved.
+                </div>
+                <div class="nav-links">
+                    <a href="#" onclick="showAbout()">About</a>
+                    <a href="#" onclick="showHelp()">Help</a>
+                    <a href="#" onclick="showPrivacy()">Privacy</a>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <header class="header">
+        <div class="container">
+            <div class="header-content">
+                <h1>
+                    <i class="fas fa-satellite-dish"></i>
+                    LoRaWAN Payload Decoder
+                </h1>
+                <p>Decode your LoRaWAN payloads with real-time validation and comprehensive error handling</p>
+            </div>
+        </div>
+    </header>
+
+    <main class="main">
+        <div class="container">
+            <div class="grid">
+                <div class="main-content">
+                    <!-- Decoder Function Card -->
+                    <div class="card">
+                        <h2>
+                            <i class="fas fa-code"></i>
+                            Decoder Function
+                        </h2>
+                        <div class="form-group">
+                            <label for="decoder-input" class="form-label">
+                                JavaScript Decoder
+                                <span class="status-indicator status-success" id="decoder-status" style="display: none;">
+                                    <i class="fas fa-check"></i> Valid
+                                </span>
+                                <div class="button-group">
+                                    <button class="copy-btn" data-target="decoder-input" title="Copy decoder">
+                                        <i class="fas fa-copy"></i>
+                                    </button>
+                                    <button class="paste-btn" data-target="decoder-input" title="Paste from clipboard">
+                                        <i class="fas fa-paste"></i>
+                                    </button>
+                                    <button id="validate-decoder" class="btn btn-secondary">
+                                        <i class="fas fa-check-circle"></i>
+                                        Validate Decoder
+                                    </button>
+                                </div>
+                            </label>
+                            <div class="drag-drop-zone">
+                                <textarea id="decoder-input" class="form-textarea" placeholder="Enter your decoder function or drag & drop here js/txt file..."></textarea>
+                                <div class="drag-drop-overlay" id="drag-drop-overlay">
+                                    <div class="drag-drop-text">
+                                        <i class="fas fa-cloud-upload-alt"></i>
+                                        Drop your JavaScript file here
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Results Card -->
+                    <div class="card">
+                        <h2>
+                            <i class="fas fa-chart-line"></i>
+                            Decoded Results
+                            <button class="copy-btn" data-target="decode-result" title="Copy result">
+                                <i class="fas fa-copy"></i>
+                            </button>
+                        </h2>
+                        <div id="decode-result" class="result-container">
+                            <div class="result-content">Enter your decoder function and payload to see results...</div>
+                        </div>
+                        <div id="payload-info" style="display: none; margin-top: 1rem;">
+                            <h3>Payload Information</h3>
+                            <div id="payload-details" class="info-list"></div>
+                        </div>
+                    </div>
+
+
+                </div>
+
+                <aside class="sidebar">
+                    <!-- Payload Input Card -->
+                    <div class="card">
+                        <h2>
+                            <i class="fas fa-terminal"></i>
+                            Payload Input & Decoding
+                        </h2>
+                        <div class="form-group">
+                            <label for="payload-input" class="form-label">Hex Payload
+                                <div class="button-group">
+                                    <button class="copy-btn" data-target="payload-input" title="Copy payload">
+                                        <i class="fas fa-copy"></i>
+                                    </button>
+                                    <button class="paste-btn" data-target="payload-input" title="Paste from clipboard">
+                                        <i class="fas fa-paste"></i>
+                                    </button>
+                                </div>
+                            </label>
+                            <input type="text" id="payload-input" class="form-input" placeholder="e.g., 09ABCF1234">
+                        </div>
+                        <div class="form-group">
+                            <label for="port-input" class="form-label">Port (Optional)</label>
+                            <input type="number" id="port-input" class="form-input" placeholder="1" min="1" max="223" value="1">
+                        </div>
+                        <div class="form-group">
+                            <label class="checkbox-container">
+                                <input type="checkbox" id="auto-decode" checked>
+                                <span class="checkmark"></span>
+                                Automatic decode
+                            </label>
+                        </div>
+                        <button id="decode-button" class="btn btn-primary">
+                            <i class="fas fa-play"></i>
+                            Decode
+                        </button>
+                    </div>
+
+                    <!-- Actions -->
+                    <div class="info-card">
+                        <h3>
+                            <i class="fas fa-tools"></i>
+                            Actions
+                        </h3>
+                        <button id="clear-all" class="btn btn-danger" style="width: 100%; margin-bottom: 0.5rem;">
+                            <i class="fas fa-trash"></i>
+                            Clear All Data
+                        </button>
+                        <button id="load-example" class="btn btn-secondary" style="width: 100%;">
+                            <i class="fas fa-download"></i>
+                            Load Example
+                        </button>
+                    </div>
+                </aside>
+            </div>
+
+            <!-- Supported Formats Section -->
+            <div class="bottom-section">
+                <div class="card">
+                    <h2>
+                        <i class="fas fa-cogs"></i>
+                        Supported Decoder Formats
+                    </h2>
+                    <div class="formats-grid">
+                        <div class="example-card">
+                            <div class="example-title">LoRa Alliance Format:</div>
+                            <div class="example-code">function decodeUplink(input) {
+  return {
+    data: { temp: input.bytes[0] },
+    warnings: [],
+    errors: []
+  };
+}</div>
+                        </div>
+                        <div class="example-card">
+                            <div class="example-title">ChirpStack Format:</div>
+                            <div class="example-code">function Decode(fPort, bytes) {
+  return {
+    temperature: bytes[0]
+  };
+}</div>
+                        </div>
+                        <div class="example-card">
+                            <div class="example-title">TTN Legacy Format:</div>
+                            <div class="example-code">function Decoder(bytes, port) {
+  return {
+    temperature: bytes[0]
+  };
+}</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Storage Notice -->
+            <div class="cookie-notice" id="storage-notice">
+                <div>
+                    <i class="fas fa-save"></i>
+                    <span id="storage-status">Your decoder function and payloads are automatically saved locally for convenience</span>
+                </div>
+                <button id="clear-cookies" class="btn btn-secondary">
+                    <i class="fas fa-eraser"></i>
+                    Clear Saved Data
+                </button>
+                <button id="check-storage" class="btn btn-secondary" style="margin-left: 0.5rem;">
+                    <i class="fas fa-info-circle"></i>
+                    Check Storage
+                </button>
+            </div>
+        </div>
+    </main>
+
+    <footer class="footer">
+        <div class="container">
+            <div class="footer-content">
+                <div class="copyright">
+                    © Created by <a href="https://www.linkedin.com/in/vu-duy-bao-ho/" target="_blank">HO Vu Duy Bao</a> at <a href="https://wi6labs.com" target="_blank">Wi6labs</a> - 2025. All rights reserved.
+                </div>
+            </div>
+        </div>
+    </footer>
+
+    <script>
+        // Enhanced storage management using localStorage instead of cookies
+        function setStorage(name, value) {
+            try {
+                // Use localStorage instead of cookies for better size limits and persistence
+                localStorage.setItem(name, value);
+                return true;
+            } catch (error) {
+                console.warn(`Failed to save '${name}' to localStorage:`, error.message);
+                // Fallback to sessionStorage if localStorage fails
+                try {
+                    sessionStorage.setItem(name, value);
+                    return true;
+                } catch (sessionError) {
+                    console.warn(`Failed to save '${name}' to sessionStorage:`, sessionError.message);
+                    return false;
+                }
+            }
+        }
+
+        function getStorage(name) {
+            try {
+                // Try localStorage first
+                const value = localStorage.getItem(name);
+                if (value !== null) {
+                    return value;
+                }
+                // Fallback to sessionStorage
+                return sessionStorage.getItem(name) || '';
+            } catch (error) {
+                console.warn(`Failed to read '${name}' from storage:`, error.message);
+                return '';
+            }
+        }
+
+        function deleteStorage(name) {
+            try {
+                localStorage.removeItem(name);
+                sessionStorage.removeItem(name);
+            } catch (error) {
+                console.warn(`Failed to delete '${name}' from storage:`, error.message);
+            }
+        }
+
+        // Legacy cookie functions for backward compatibility
+        function setCookie(name, value, days = 365) {
+            // For small values, still use cookies as backup
+            if (value.length < 3000) {
+                try {
+                    const date = new Date();
+                    date.setTime(date.getTime() + (days * 24 * 60 * 60 * 1000));
+                    const expires = `expires=${date.toUTCString()}`;
+                    // Remove Secure flag for local development compatibility
+                    document.cookie = `${name}=${encodeURIComponent(value)};${expires};path=/;SameSite=Lax`;
+                } catch (error) {
+                    console.warn(`Failed to set cookie '${name}':`, error.message);
+                }
+            }
+            // Always try localStorage as primary storage
+            setStorage(name, value);
+        }
+
+        function getCookie(name) {
+            // Try localStorage first
+            const storageValue = getStorage(name);
+            if (storageValue) {
+                return storageValue;
+            }
+
+            // Fallback to cookies
+            try {
+                const value = `; ${document.cookie}`;
+                const parts = value.split(`; ${name}=`);
+                if (parts.length === 2) {
+                    return decodeURIComponent(parts.pop().split(';').shift());
+                }
+            } catch (error) {
+                console.warn(`Failed to read cookie '${name}':`, error.message);
+            }
+            return '';
+        }
+
+        function deleteCookie(name) {
+            // Delete from all storage types
+            deleteStorage(name);
+            try {
+                document.cookie = `${name}=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;`;
+            } catch (error) {
+                console.warn(`Failed to delete cookie '${name}':`, error.message);
+            }
+        }
+
+        // Generate timestamp with browser's timezone
+        function getBrowserTimestamp() {
+            const now = new Date();
+            const userLocale = navigator.language || 'en-US';
+            
+            return {
+                dateTime: now.toLocaleString(userLocale, {
+                    year: 'numeric',
+                    month: '2-digit',
+                    day: '2-digit',
+                    hour: '2-digit',
+                    minute: '2-digit',
+                    second: '2-digit',
+                    timeZoneName: 'short',
+                    hour12: false
+                }),
+                timestamp: Math.floor(now.getTime() / 1000)
+            };
+        }
+
+        // Enhanced hex to bytes conversion
+        function hexToBytes(hex) {
+            if (!hex) return new Uint8Array(0);
+
+            hex = hex.replace(/[^0-9A-Fa-f]/g, '');
+            if (hex.length % 2 !== 0) hex = '0' + hex;
+
+            const bytes = new Uint8Array(hex.length / 2);
+            for (let i = 0; i < hex.length; i += 2) {
+                bytes[i / 2] = parseInt(hex.substr(i, 2), 16);
+            }
+            return bytes;
+        }
+
+        // Enhanced result display with syntax highlighting
+        function updateResult(data, isError = false) {
+            const resultElement = document.getElementById('decode-result');
+            const resultContainer = resultElement.closest('.result-container');
+
+            resultContainer.className = `result-container ${isError ? 'result-error' : 'result-success'}`;
+
+            if (typeof data === 'object') {
+                resultElement.innerHTML = `<pre class="result-content">${JSON.stringify(data, null, 2)}</pre>`;
+            } else {
+                resultElement.innerHTML = `<div class="result-content">${data}</div>`;
+            }
+        }
+
+        // Show payload information
+        function showPayloadInfo(bytes) {
+            const infoElement = document.getElementById('payload-info');
+            const detailsElement = document.getElementById('payload-details');
+
+            if (bytes && bytes.length > 0) {
+                const details = [
+                    `<li><i class="fas fa-info"></i> Length: ${bytes.length} bytes</li>`,
+                    `<li><i class="fas fa-code"></i> Hex: ${Array.from(bytes).map(b => b.toString(16).padStart(2, '0').toUpperCase()).join(' ')}</li>`,
+                    `<li><i class="fas fa-list-ol"></i> Decimal: [${Array.from(bytes).join(', ')}]</li>`
+                ];
+
+                detailsElement.innerHTML = details.join('');
+                infoElement.style.display = 'block';
+            } else {
+                infoElement.style.display = 'none';
+            }
+        }
+
+        // Enhanced decoder validation
+        function validateDecoder(code) {
+            if (!code.trim()) return { valid: false, error: 'Decoder function is empty' };
+
+            const hasDecodeUplink = /function\s+decodeUplink\s*\(/i.test(code);
+            const hasDecode = /function\s+Decode\s*\(/i.test(code);
+            const hasDecoder = /function\s+Decoder\s*\(/i.test(code);
+
+            if (!hasDecodeUplink && !hasDecode && !hasDecoder) {
+                return {
+                    valid: false,
+                    error: 'No valid decoder function found. Use decodeUplink, Decode, or Decoder.'
+                };
+            }
+
+            try {
+                new Function(code);
+                return { valid: true };
+            } catch (error) {
+                return { valid: false, error: `Syntax error: ${error.message}` };
+            }
+        }
+
+        // Enhanced decode function
+        function performDecode() {
+            const decoderElement = document.getElementById('decoder-input');
+            const payloadElement = document.getElementById('payload-input');
+            const portElement = document.getElementById('port-input');
+            const decodeButton = document.getElementById('decode-button');
+
+            const decoderCode = decoderElement.value.trim();
+            const hexPayload = payloadElement.value.trim();
+            const port = parseInt(portElement.value) || 1;
+
+            if (!decoderCode) {
+                updateResult({ error: 'Please enter a decoder function' }, true);
+                return;
+            }
+
+            if (!hexPayload) {
+                updateResult({ error: 'Please enter a hex payload' }, true);
+                return;
+            }
+
+            // Validate decoder
+            const validation = validateDecoder(decoderCode);
+            if (!validation.valid) {
+                updateResult({ error: 'Decoder validation failed', details: validation.error }, true);
+                return;
+            }
+
+            try {
+                const bytes = hexToBytes(hexPayload);
+                showPayloadInfo(bytes);
+
+                // Set loading state
+                decodeButton.classList.add('loading');
+                decodeButton.disabled = true;
+
+                setTimeout(() => {
+                    try {
+                        let result = null;
+
+                        // Create safe execution environment
+                        const sandbox = new Function('bytes', 'port', 'fPort', `
+                            ${decoderCode}
+
+                            if (typeof decodeUplink === 'function') {
+                                return decodeUplink({ bytes: bytes, fPort: port });
+                            } else if (typeof Decode === 'function') {
+                                return Decode(port, bytes);
+                            } else if (typeof Decoder === 'function') {
+                                return Decoder(bytes, port);
+                            } else {
+                                throw new Error('No valid decoder function found');
+                            }
+                        `);
+
+                        result = sandbox(bytes, port, port);
+
+                        if (result) {
+                            const timestampData = getBrowserTimestamp();
+                            
+                            updateResult({
+                                ...timestampData,
+                                decoded_data: result,
+                                hexPayload: hexPayload.toUpperCase()
+                            });
+
+                            // Save successful inputs
+                            saveInputs();
+                        } else {
+                            updateResult({ error: 'Decoder returned no data' }, true);
+                        }
+                    } catch (error) {
+                        updateResult({
+                            error: 'Decoder execution failed',
+                            details: error.message,
+                            help: 'Check your decoder function syntax and logic'
+                        }, true);
+                    } finally {
+                        decodeButton.classList.remove('loading');
+                        decodeButton.disabled = false;
+                    }
+                }, 100);
+
+            } catch (error) {
+                updateResult({
+                    error: 'Payload processing failed',
+                    details: error.message
+                }, true);
+                decodeButton.classList.remove('loading');
+                decodeButton.disabled = false;
+            }
+        }
+
+        // Enhanced save inputs function with error handling and user feedback
+        function saveInputs() {
+            const decoder = document.getElementById('decoder-input').value;
+            const payload = document.getElementById('payload-input').value;
+            const port = document.getElementById('port-input').value;
+
+            let savedCount = 0;
+            let failedItems = [];
+
+            if (decoder.trim()) {
+                if (setCookie('lorawan_decoder', decoder)) {
+                    savedCount++;
+                } else {
+                    failedItems.push('decoder function');
+                }
+            }
+            
+            if (payload.trim()) {
+                if (setCookie('lorawan_payload', payload)) {
+                    savedCount++;
+                } else {
+                    failedItems.push('payload');
+                }
+            }
+            
+            if (port.trim()) {
+                if (setCookie('lorawan_port', port)) {
+                    savedCount++;
+                } else {
+                    failedItems.push('port');
+                }
+            }
+
+            // Provide user feedback about save status
+            if (failedItems.length > 0) {
+                console.warn(`Failed to save: ${failedItems.join(', ')}`);
+                // Show a subtle notification that some items couldn't be saved
+                const statusElement = document.getElementById('decoder-status');
+                if (statusElement) {
+                    const originalContent = statusElement.innerHTML;
+                    statusElement.innerHTML = '<i class="fas fa-exclamation-triangle"></i>Saving... ';
+                    statusElement.className = 'status-indicator status-warning';
+                    setTimeout(() => {
+                        updateDecoderStatus(); // Restore original status
+                    }, 3000);
+                }
+            }
+        }
+
+        // Load example decoder and payload
+        function loadExample() {
+            const exampleDecoder = `// Temperature and Humidity Sensor Decoder (TTN Format)
+function decodeUplink(input) {
+  var data = {};
+  var warnings = [];
+  var errors = [];
+
+  if (input.bytes.length < 2) {
+    errors.push("Payload too short");
+    return { data: data, warnings: warnings, errors: errors };
+  }
+
+  // Temperature (signed, -40 to +85°C)
+  var temp_raw = input.bytes[0];
+  if (temp_raw > 127) {
+    data.temperature = temp_raw - 256;
+  } else {
+    data.temperature = temp_raw;
+  }
+
+  // Humidity (0-100%)
+  data.humidity = input.bytes[1];
+
+  // Battery voltage (if available)
+  if (input.bytes.length >= 4) {
+    data.battery = ((input.bytes[2] << 8) | input.bytes[3]) / 100;
+  }
+
+  // Signal quality
+  if (input.bytes.length >= 5) {
+    data.signal_quality = input.bytes[4];
+  }
+
+  // Validation warnings
+  if (data.temperature < -40 || data.temperature > 85) {
+    warnings.push("Temperature out of expected range");
+  }
+
+  if (data.humidity > 100) {
+    warnings.push("Humidity value exceeds 100%");
+  }
+
+  return {
+    data: data,
+    warnings: warnings,
+    errors: errors
+  };
+}`;
+
+            document.getElementById('decoder-input').value = exampleDecoder;
+            document.getElementById('payload-input').value = '1A40';
+            document.getElementById('port-input').value = '1';
+
+            // Validate the example
+            updateDecoderStatus();
+        }
+
+        // Update decoder status indicator
+        function updateDecoderStatus() {
+            const decoderCode = document.getElementById('decoder-input').value;
+            const statusElement = document.getElementById('decoder-status');
+            const validation = validateDecoder(decoderCode);
+
+            if (validation.valid) {
+                statusElement.className = 'status-indicator status-success';
+                statusElement.innerHTML = '<i class="fas fa-check"></i> Valid';
+                statusElement.style.display = 'inline-flex';
+            } else if (decoderCode.trim()) {
+                statusElement.className = 'status-indicator status-error';
+                statusElement.innerHTML = '<i class="fas fa-times"></i> Invalid';
+                statusElement.style.display = 'inline-flex';
+            } else {
+                statusElement.style.display = 'none';
+            }
+        }
+
+        // Clear all data
+        function clearAllData() {
+            if (confirm('Are you sure you want to clear all data? This will remove your decoder function, payloads, and saved settings.')) {
+                document.getElementById('decoder-input').value = '';
+                document.getElementById('payload-input').value = '';
+                document.getElementById('port-input').value = '1';
+
+                deleteCookie('lorawan_decoder');
+                deleteCookie('lorawan_payload');
+                deleteCookie('lorawan_port');
+
+                updateResult('All data cleared. Enter a decoder function and payload to get started.', false);
+                updateDecoderStatus();
+                document.getElementById('payload-info').style.display = 'none';
+                
+                // Show confirmation that data was cleared
+                setTimeout(() => {
+                    const timestampData = getBrowserTimestamp();
+                    
+                    updateResult({
+                        status: 'Data cleared successfully',
+                        ...timestampData,
+                        message: 'All saved decoder functions, payloads, and settings have been removed from your browser storage.',
+                        next_steps: 'You can now enter a new decoder function or load an example to get started.'
+                    });
+                }, 500);
+            }
+        }
+
+        // Drag and drop functionality
+        function setupDragAndDrop() {
+            const decoderInput = document.getElementById('decoder-input');
+            const dragDropZone = decoderInput.closest('.drag-drop-zone');
+            const overlay = document.getElementById('drag-drop-overlay');
+            let dragCounter = 0;
+
+            // Prevent default drag behaviors on the entire document
+            ['dragenter', 'dragover', 'dragleave', 'drop'].forEach(eventName => {
+                document.addEventListener(eventName, preventDefaults, false);
+            });
+
+            function preventDefaults(e) {
+                e.preventDefault();
+                e.stopPropagation();
+            }
+
+            // Handle drag enter on the drag zone
+            dragDropZone.addEventListener('dragenter', function(e) {
+                dragCounter++;
+                decoderInput.classList.add('drag-over');
+                overlay.classList.add('active');
+            });
+
+            // Handle drag leave on the drag zone
+            dragDropZone.addEventListener('dragleave', function(e) {
+                dragCounter--;
+                if (dragCounter === 0) {
+                    decoderInput.classList.remove('drag-over');
+                    overlay.classList.remove('active');
+                }
+            });
+
+            // Handle drag over
+            dragDropZone.addEventListener('dragover', function(e) {
+                e.dataTransfer.dropEffect = 'copy';
+            });
+
+            // Handle file drop
+            dragDropZone.addEventListener('drop', function(e) {
+                dragCounter = 0;
+                decoderInput.classList.remove('drag-over');
+                overlay.classList.remove('active');
+
+                const files = e.dataTransfer.files;
+                handleFiles(files);
+            });
+
+            function handleFiles(files) {
+                if (files.length === 0) return;
+
+                const file = files[0];
+
+                // Check if it's a JavaScript file
+                const validExtensions = ['.js', '.javascript', '.txt'];
+                const fileName = file.name.toLowerCase();
+                const isValidFile = validExtensions.some(ext => fileName.endsWith(ext)) || file.type === 'text/javascript' || file.type === 'application/javascript' || file.type === 'text/plain';
+
+                if (!isValidFile) {
+                    updateResult({
+                        error: 'Invalid file type',
+                        details: `Please drop a JavaScript file (.js) or text file (.txt). Received: ${file.name}`,
+                        help: 'Only JavaScript and text files are supported for decoder functions.'
+                    }, true);
+                    return;
+                }
+
+                // Check file size (limit to 1MB)
+                if (file.size > 1024 * 1024) {
+                    updateResult({
+                        error: 'File too large',
+                        details: `File size is ${(file.size / 1024 / 1024).toFixed(2)}MB. Maximum allowed size is 1MB.`,
+                        help: 'Please use a smaller file or copy the content manually.'
+                    }, true);
+                    return;
+                }
+
+                // Read the file
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    const content = e.target.result;
+
+                    // Validate that the content contains a decoder function
+                    const hasValidFunction = /function\s+(decodeUplink|Decode|Decoder)\s*\(/i.test(content);
+
+                    if (!hasValidFunction) {
+                        if (confirm('The file does not appear to contain a valid decoder function (decodeUplink, Decode, or Decoder). Do you want to load it anyway?')) {
+                            decoderInput.value = content;
+                            updateDecoderStatus();
+                            saveInputs();
+                            const timestampData = getBrowserTimestamp();
+                            updateResult({
+                                status: 'File loaded successfully',
+                                ...timestampData,
+                                message: `Loaded ${file.name} (${file.size} bytes). Please verify the decoder function.`,
+                                warning: 'No valid decoder function detected'
+                            });
+                        }
+                    } else {
+                        decoderInput.value = content;
+                        updateDecoderStatus();
+                        saveInputs();
+                        const timestampData = getBrowserTimestamp();
+                        updateResult({
+                            status: 'File loaded successfully',
+                            ...timestampData,
+                            message: `Loaded ${file.name} (${file.size} bytes) with valid decoder function.`
+                        });
+
+                        // Auto-decode if enabled and payload is available
+                        debouncedDecode();
+                    }
+                };
+
+                reader.onerror = function() {
+                    updateResult({
+                        error: 'File reading failed',
+                        details: 'Could not read the dropped file. Please try again or copy the content manually.',
+                        help: 'Make sure the file is not corrupted and you have permission to read it.'
+                    }, true);
+                };
+
+                reader.readAsText(file);
+            }
+        }
+
+        // Utility functions for footer links
+        function showAbout() {
+            alert('LoRaWAN Payload Decoder v2.0\nA comprehensive tool for decoding and testing LoRaWAN device payloads. Supports multiple LoRa-Alliance decoder formats including TTS, ChirpStack, and legacy formats.\nBuilt by Bao from Wi6labs for the LoRaWAN community.');
+        }
+
+        function showHelp() {
+            alert('Help & Tips:\n1. Enter your decoder function in the supported format\n2. Add a hex payload to test with\n3. Click "Decode Payload" to see results\n4. Use "Validate Decoder" to check syntax\n5. Try the examples for reference\n6. Drag & drop .js files directly onto the decoder input\nSupported formats: LoRa Alliance, ChirpStack, TTN Legacy');
+        }
+
+        function showPrivacy() {
+            alert('Privacy Policy:\nThis tool runs entirely in your browser. No data is transmitted to external servers. Decoder functions and payloads are saved locally using browser localStorage and sessionStorage for your convenience. You can clear this data at any time using the provided buttons.');
+        }
+
+        // Check storage status
+        function checkStorageStatus() {
+            let storageInfo = {
+                localStorage: { available: false, used: 0, hasData: false },
+                sessionStorage: { available: false, used: 0, hasData: false },
+                cookies: { available: false, used: 0, hasData: false }
+            };
+
+            // Check localStorage
+            try {
+                const testKey = '_test_' + Date.now();
+                localStorage.setItem(testKey, 'test');
+                localStorage.removeItem(testKey);
+                storageInfo.localStorage.available = true;
+                
+                const decoderData = localStorage.getItem('lorawan_decoder');
+                if (decoderData) {
+                    storageInfo.localStorage.hasData = true;
+                    storageInfo.localStorage.used = decoderData.length;
+                }
+            } catch (e) {
+                console.warn('localStorage not available:', e.message);
+            }
+
+            // Check sessionStorage
+            try {
+                const testKey = '_test_' + Date.now();
+                sessionStorage.setItem(testKey, 'test');
+                sessionStorage.removeItem(testKey);
+                storageInfo.sessionStorage.available = true;
+                
+                const decoderData = sessionStorage.getItem('lorawan_decoder');
+                if (decoderData) {
+                    storageInfo.sessionStorage.hasData = true;
+                    storageInfo.sessionStorage.used = decoderData.length;
+                }
+            } catch (e) {
+                console.warn('sessionStorage not available:', e.message);
+            }
+
+            // Check cookies
+            try {
+                storageInfo.cookies.available = navigator.cookieEnabled;
+                if (document.cookie) {
+                    storageInfo.cookies.used = document.cookie.length;
+                    storageInfo.cookies.hasData = document.cookie.includes('lorawan_');
+                }
+            } catch (e) {
+                console.warn('Cookies not available:', e.message);
+            }
+
+            // Display storage status
+            let message = 'Storage Status:\n';
+            message += `localStorage: ${storageInfo.localStorage.available ? 'Available' : 'Not Available'}`;
+            if (storageInfo.localStorage.hasData) {
+                message += ` (${storageInfo.localStorage.used} characters saved)`;
+            }
+            message += '\n';
+            
+            message += `sessionStorage: ${storageInfo.sessionStorage.available ? 'Available' : 'Not Available'}`;
+            if (storageInfo.sessionStorage.hasData) {
+                message += ` (${storageInfo.sessionStorage.used} characters saved)`;
+            }
+            message += '\n';
+            
+            message += `Cookies: ${storageInfo.cookies.available ? 'Available' : 'Not Available'}`;
+            if (storageInfo.cookies.hasData) {
+                message += ` (backup data present)`;
+            }
+
+            if (!storageInfo.localStorage.available && !storageInfo.sessionStorage.available) {
+                message += '\nWARNING: No storage methods are available. Your data will not be saved!';
+            } else if (storageInfo.localStorage.available) {
+                message += '\nYour data is being saved using localStorage (recommended).';
+            } else {
+                message += '\nYour data is being saved using sessionStorage (temporary).';
+            }
+
+            alert(message);
+            
+            // Update storage status text
+            const statusElement = document.getElementById('storage-status');
+            if (statusElement) {
+                if (!storageInfo.localStorage.available && !storageInfo.sessionStorage.available) {
+                    statusElement.textContent = 'Warning: Storage not available - data will not be saved';
+                    statusElement.parentElement.style.color = '#dc2626';
+                } else if (storageInfo.localStorage.hasData || storageInfo.sessionStorage.hasData) {
+                    statusElement.textContent = 'Your decoder function and payloads are saved locally';
+                    statusElement.parentElement.style.color = '#059669';
+                } else {
+                    statusElement.textContent = 'Your decoder function and payloads will be saved automatically';
+                    statusElement.parentElement.style.color = '';
+                }
+            }
+        }
+
+        // Add this function before the DOMContentLoaded event listener
+        function setupCopyButtons() {
+            document.querySelectorAll('.copy-btn').forEach(button => {
+                button.addEventListener('click', async (e) => {
+                    e.preventDefault();
+                    const targetId = button.getAttribute('data-target');
+                    const targetElement = document.getElementById(targetId);
+                    let textToCopy = '';
+
+                    if (targetId === 'decode-result') {
+                        textToCopy = targetElement.textContent;
+                    } else {
+                        textToCopy = targetElement.value;
+                    }
+
+                    try {
+                        await navigator.clipboard.writeText(textToCopy);
+                        button.classList.add('copied');
+                        const originalTitle = button.getAttribute('title');
+                        button.setAttribute('title', 'Copied!');
+
+                        setTimeout(() => {
+                            button.classList.remove('copied');
+                            button.setAttribute('title', originalTitle);
+                        }, 2000);
+                    } catch (err) {
+                        console.error('Failed to copy text:', err);
+                    }
+                });
+            });
+        }
+
+        // Add this function before the DOMContentLoaded event listener
+        function setupPasteButtons() {
+            document.querySelectorAll('.paste-btn').forEach(button => {
+                button.addEventListener('click', async (e) => {
+                    e.preventDefault();
+                    const targetId = button.getAttribute('data-target');
+                    const targetElement = document.getElementById(targetId);
+
+                    try {
+                        const text = await navigator.clipboard.readText();
+                        targetElement.value = text;
+                        button.classList.add('pasted');
+                        const originalTitle = button.getAttribute('title');
+                        button.setAttribute('title', 'Pasted!');
+
+                        // Trigger input event to activate auto-decode if enabled
+                        const inputEvent = new Event('input', {
+                            bubbles: true,
+                            cancelable: true,
+                        });
+                        targetElement.dispatchEvent(inputEvent);
+
+                        setTimeout(() => {
+                            button.classList.remove('pasted');
+                            button.setAttribute('title', originalTitle);
+                        }, 2000);
+                    } catch (err) {
+                        console.error('Failed to paste text:', err);
+                    }
+                });
+            });
+        }
+
+        // Initialize the application
+        document.addEventListener('DOMContentLoaded', function() {
+            // Setup drag and drop functionality
+            setupDragAndDrop();
+
+            // Load saved data
+            const savedDecoder = getCookie('lorawan_decoder');
+            const savedPayload = getCookie('lorawan_payload');
+            const savedPort = getCookie('lorawan_port');
+
+            if (savedDecoder) {
+                document.getElementById('decoder-input').value = savedDecoder;
+            } else {
+                loadExample(); // Load example if no saved data
+            }
+
+            if (savedPayload) {
+                document.getElementById('payload-input').value = savedPayload;
+            }
+
+            if (savedPort) {
+                document.getElementById('port-input').value = savedPort;
+            }
+
+            // Event listeners
+            document.getElementById('decode-button').addEventListener('click', performDecode);
+            document.getElementById('validate-decoder').addEventListener('click', () => {
+                const validation = validateDecoder(document.getElementById('decoder-input').value);
+                if (validation.valid) {
+                    const timestampData = getBrowserTimestamp();
+                    updateResult({ 
+                        status: 'Decoder validation passed', 
+                        ...timestampData,
+                        message: 'Your decoder function is syntactically correct and properly formatted.' 
+                    });
+                } else {
+                    const timestampData = getBrowserTimestamp();
+                    updateResult({ 
+                        error: 'Decoder validation failed', 
+                        ...timestampData,
+                        details: validation.error 
+                    }, true);
+                }
+            });
+
+            document.getElementById('clear-all').addEventListener('click', clearAllData);
+            document.getElementById('clear-cookies').addEventListener('click', clearAllData);
+            document.getElementById('load-example').addEventListener('click', loadExample);
+            document.getElementById('check-storage').addEventListener('click', checkStorageStatus);
+
+            // Auto-save with debouncing
+            let saveTimeout;
+            let decodeTimeout;
+
+            function debouncedSave() {
+                clearTimeout(saveTimeout);
+                saveTimeout = setTimeout(saveInputs, 1000);
+            }
+
+            function debouncedDecode() {
+                const autoDecodeCheckbox = document.getElementById('auto-decode');
+                if (autoDecodeCheckbox && autoDecodeCheckbox.checked) {
+                    clearTimeout(decodeTimeout);
+                    decodeTimeout = setTimeout(() => {
+                        const decoder = document.getElementById('decoder-input').value.trim();
+                        const payload = document.getElementById('payload-input').value.trim();
+                        if (decoder && payload) {
+                            performDecode();
+                        }
+                    }, 100); // Auto-decode after 0.1 seconds of inactivity
+                }
+            }
+
+            document.getElementById('decoder-input').addEventListener('input', () => {
+                updateDecoderStatus();
+                debouncedSave();
+                debouncedDecode();
+            });
+
+            document.getElementById('payload-input').addEventListener('input', () => {
+                debouncedSave();
+                debouncedDecode();
+            });
+
+            document.getElementById('port-input').addEventListener('input', () => {
+                debouncedSave();
+                debouncedDecode();
+            });
+
+            // Enter key support
+            document.getElementById('payload-input').addEventListener('keypress', (e) => {
+                if (e.key === 'Enter') performDecode();
+            });
+
+            // Initial status update
+            updateDecoderStatus();
+
+            // Welcome message
+            updateResult('Welcome to the LoRaWAN Payload Decoder! Enter your decoder function and payload above to get started, or use the "Load Example" button to try a sample decoder.');
+
+            // Setup copy buttons
+            setupCopyButtons();
+
+            // Setup paste buttons
+            setupPasteButtons();
+        });
+    </script>
+</body>
+
+</html>
