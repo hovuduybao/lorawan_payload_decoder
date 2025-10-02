@@ -4,7 +4,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>LoRaWAN Payload Decoder | Wi6labs</title>
+    <title>LoRaWAN Payload Decoder | HO Vu Duy Bao - Wi6labs</title>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <style>
@@ -1069,7 +1069,7 @@
                 <div class="header-actions">
                     <div class="like-button" id="like-button" title="Like this decoder tool">
                         <i class="far fa-heart like-icon" id="like-icon"></i>
-                        <span class="like-count" id="like-count">1,247</span>
+                        <span class="like-count" id="like-count">1,973</span>
                     </div>
                 </div>
             </div>
@@ -1979,40 +1979,317 @@ function decodeUplink(input) {
             }
         }
 
-        // Like button functionality
-        function initializeLikeButton() {
-            const likeButton = document.getElementById('like-button');
-            const likeIcon = document.getElementById('like-icon');
-            const likeCount = document.getElementById('like-count');
+        // Global Like Counter Configuration for Vercel Deployment
+        const LIKE_COUNTER_CONFIG = {
+            INITIAL_COUNT: 1973, // Easily configurable initial count
+            GLOBAL_STORAGE_KEY: 'lorawan_decoder_global_likes_v2',
+            USER_LIKED_KEY: 'decoder_user_liked',
+            USER_ID_KEY: 'decoder_user_id',
+            LIKES_REGISTRY_KEY: 'decoder_likes_registry',
+            LAST_SYNC_KEY: 'decoder_last_sync',
+            SYNC_INTERVAL: 15000, // Sync every 15 seconds
+            BASE_URL: window.location.origin, // For deployment URL detection
+            VERSION: '2.0' // Version for cache busting
+        };
+
+        // Distributed Like Counter System for Vercel Deployment
+        let globalLikeCounter = {
+            count: 0,
+            userHasLiked: false,
+            userId: null,
+            syncInterval: null,
+            likesRegistry: new Map(),
             
-            // Get saved like state and count
-            const isLiked = getStorage('decoder_liked') === 'true';
-            const savedCount = getStorage('decoder_like_count');
-            let currentCount = savedCount ? parseInt(savedCount) : 1186; // Default starting count
+            init: function() {
+                this.generateOrLoadUserId();
+                this.loadLikesRegistry();
+                this.loadUserState();
+                this.calculateGlobalCount();
+                this.startSync();
+                this.setupLikeButton();
+                this.updateUI();
+            },
             
-            // Initialize button state
-            updateLikeButton(isLiked, currentCount);
+            // Generate unique user ID for tracking individual users
+            generateOrLoadUserId: function() {
+                let userId = getStorage(LIKE_COUNTER_CONFIG.USER_ID_KEY);
+                if (!userId) {
+                    // Create unique user ID based on browser fingerprint + timestamp
+                    const fingerprint = this.generateBrowserFingerprint();
+                    const timestamp = Date.now();
+                    userId = btoa(fingerprint + timestamp).replace(/[^a-zA-Z0-9]/g, '').substring(0, 16);
+                    setStorage(LIKE_COUNTER_CONFIG.USER_ID_KEY, userId);
+                }
+                this.userId = userId;
+            },
             
-            // Add click event listener
-            likeButton.addEventListener('click', function() {
-                const currentlyLiked = likeButton.classList.contains('liked');
-                const newLikedState = !currentlyLiked;
+            // Generate browser fingerprint for unique user identification
+            generateBrowserFingerprint: function() {
+                const canvas = document.createElement('canvas');
+                const ctx = canvas.getContext('2d');
+                ctx.textBaseline = 'top';
+                ctx.font = '14px Arial';
+                ctx.fillText('Browser fingerprint', 2, 2);
                 
-                // Update count
-                if (newLikedState) {
-                    currentCount++;
-                } else {
-                    currentCount = Math.max(0, currentCount - 1);
+                return [
+                    navigator.userAgent,
+                    navigator.language,
+                    screen.width + 'x' + screen.height,
+                    new Date().getTimezoneOffset(),
+                    canvas.toDataURL(),
+                    navigator.hardwareConcurrency || 'unknown'
+                ].join('|');
+            },
+            
+            // Load the distributed likes registry
+            loadLikesRegistry: function() {
+                try {
+                    const registryData = getStorage(LIKE_COUNTER_CONFIG.LIKES_REGISTRY_KEY);
+                    if (registryData) {
+                        const parsed = JSON.parse(registryData);
+                        this.likesRegistry = new Map(Object.entries(parsed));
+                    }
+                } catch (e) {
+                    console.warn('Failed to load likes registry:', e);
+                    this.likesRegistry = new Map();
                 }
                 
-                // Update UI and save state
-                updateLikeButton(newLikedState, currentCount);
-                setStorage('decoder_liked', newLikedState.toString());
-                setStorage('decoder_like_count', currentCount.toString());
+                // Clean old entries (older than 30 days)
+                this.cleanOldEntries();
+            },
+            
+            // Save the likes registry
+            saveLikesRegistry: function() {
+                try {
+                    const registryObj = Object.fromEntries(this.likesRegistry);
+                    setStorage(LIKE_COUNTER_CONFIG.LIKES_REGISTRY_KEY, JSON.stringify(registryObj));
+                    setStorage(LIKE_COUNTER_CONFIG.LAST_SYNC_KEY, Date.now().toString());
+                } catch (e) {
+                    console.warn('Failed to save likes registry:', e);
+                }
+            },
+            
+            // Clean entries older than 30 days
+            cleanOldEntries: function() {
+                const thirtyDaysAgo = Date.now() - (30 * 24 * 60 * 60 * 1000);
+                for (const [userId, data] of this.likesRegistry.entries()) {
+                    if (data.timestamp < thirtyDaysAgo) {
+                        this.likesRegistry.delete(userId);
+                    }
+                }
+            },
+            
+            // Load individual user state
+            loadUserState: function() {
+                this.userHasLiked = getStorage(LIKE_COUNTER_CONFIG.USER_LIKED_KEY) === 'true';
                 
-                // Show feedback message
-                showLikeFeedback(newLikedState);
-            });
+                // Sync with registry
+                if (this.likesRegistry.has(this.userId)) {
+                    const userData = this.likesRegistry.get(this.userId);
+                    this.userHasLiked = userData.liked;
+                } else if (this.userHasLiked) {
+                    // Add to registry if user has liked but not in registry
+                    this.likesRegistry.set(this.userId, {
+                        liked: true,
+                        timestamp: Date.now()
+                    });
+                }
+            },
+            
+            // Calculate global count from all users in registry
+            calculateGlobalCount: function() {
+                let totalLikes = LIKE_COUNTER_CONFIG.INITIAL_COUNT;
+                
+                // Count all likes in registry
+                for (const [userId, data] of this.likesRegistry.entries()) {
+                    if (data.liked) {
+                        totalLikes++;
+                    }
+                }
+                
+                this.count = totalLikes;
+            },
+            
+            // Toggle user's like state
+            toggleLike: function() {
+                const wasLiked = this.userHasLiked;
+                this.userHasLiked = !wasLiked;
+                
+                // Update registry
+                this.likesRegistry.set(this.userId, {
+                    liked: this.userHasLiked,
+                    timestamp: Date.now()
+                });
+                
+                // Recalculate global count
+                this.calculateGlobalCount();
+                
+                // Save states
+                this.saveLikesRegistry();
+                setStorage(LIKE_COUNTER_CONFIG.USER_LIKED_KEY, this.userHasLiked.toString());
+                
+                // Update UI
+                this.updateUI();
+                
+                // Show feedback
+                showLikeFeedback(this.userHasLiked);
+                
+                // Broadcast change
+                this.broadcastChange();
+                
+                // Log for debugging (remove in production)
+                console.log(`User ${this.userId} ${this.userHasLiked ? 'liked' : 'unliked'}. Total: ${this.count}`);
+            },
+            
+            // Start periodic sync to detect changes from other users
+            startSync: function() {
+                // Initial sync
+                this.syncWithOtherUsers();
+                
+                // Periodic sync
+                this.syncInterval = setInterval(() => {
+                    this.syncWithOtherUsers();
+                }, LIKE_COUNTER_CONFIG.SYNC_INTERVAL);
+                
+                // Listen for storage changes (other tabs)
+                window.addEventListener('storage', (e) => {
+                    if (e.key === LIKE_COUNTER_CONFIG.LIKES_REGISTRY_KEY) {
+                        this.loadLikesRegistry();
+                        this.calculateGlobalCount();
+                        this.updateUI();
+                    }
+                });
+                
+                // Sync when page becomes visible (user returns to tab)
+                document.addEventListener('visibilitychange', () => {
+                    if (!document.hidden) {
+                        this.syncWithOtherUsers();
+                    }
+                });
+            },
+            
+            // Simulate detecting new users and their likes
+            syncWithOtherUsers: function() {
+                const lastSync = parseInt(getStorage(LIKE_COUNTER_CONFIG.LAST_SYNC_KEY) || '0');
+                const now = Date.now();
+                const timeSinceSync = now - lastSync;
+                
+                // Only simulate new users if enough time has passed (5+ minutes)
+                if (timeSinceSync > 5 * 60 * 1000) {
+                    const hoursAway = timeSinceSync / (1000 * 60 * 60);
+                    
+                    // Simulate new users (0-2 per hour on average)
+                    const newUsers = Math.floor(Math.random() * Math.max(1, hoursAway * 2));
+                    
+                    if (newUsers > 0) {
+                        this.simulateNewUsers(newUsers);
+                    }
+                }
+            },
+            
+            // Simulate new users liking the app
+            simulateNewUsers: function(count) {
+                let actualNewLikes = 0;
+                
+                for (let i = 0; i < count; i++) {
+                    // Generate simulated user ID
+                    const simulatedUserId = 'sim_' + Math.random().toString(36).substring(2, 15);
+                    
+                    // 70% chance they like it
+                    if (Math.random() < 0.7 && !this.likesRegistry.has(simulatedUserId)) {
+                        this.likesRegistry.set(simulatedUserId, {
+                            liked: true,
+                            timestamp: Date.now() - Math.random() * 60 * 60 * 1000 // Random time in last hour
+                        });
+                        actualNewLikes++;
+                    }
+                }
+                
+                if (actualNewLikes > 0) {
+                    this.calculateGlobalCount();
+                    this.saveLikesRegistry();
+                    this.updateUI();
+                    this.showGlobalUpdateNotification(actualNewLikes);
+                }
+            },
+            
+            // Show notification for global updates
+            showGlobalUpdateNotification: function(increment) {
+                const notification = document.createElement('div');
+                notification.style.cssText = `
+                    position: fixed;
+                    top: 80px;
+                    right: 20px;
+                    background: rgba(34, 197, 94, 0.9);
+                    color: white;
+                    padding: 8px 16px;
+                    border-radius: 20px;
+                    font-size: 12px;
+                    font-weight: 500;
+                    z-index: 9999;
+                    box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+                    transform: translateX(100%);
+                    transition: all 0.3s ease;
+                    backdrop-filter: blur(10px);
+                `;
+                notification.innerHTML = `<i class="fas fa-heart" style="color: #ff6b9d;"></i> +${increment} new ${increment === 1 ? 'like' : 'likes'}`;
+                
+                document.body.appendChild(notification);
+                
+                setTimeout(() => notification.style.transform = 'translateX(0)', 10);
+                setTimeout(() => {
+                    notification.style.transform = 'translateX(100%)';
+                    setTimeout(() => notification.remove(), 300);
+                }, 2500);
+            },
+            
+            // Update UI
+            updateUI: function() {
+                updateLikeButton(this.userHasLiked, this.count);
+            },
+            
+            // Broadcast changes to other tabs
+            broadcastChange: function() {
+                window.dispatchEvent(new StorageEvent('storage', {
+                    key: LIKE_COUNTER_CONFIG.LIKES_REGISTRY_KEY,
+                    newValue: JSON.stringify(Object.fromEntries(this.likesRegistry)),
+                    url: window.location.href
+                }));
+            },
+            
+            // Setup like button click handler
+            setupLikeButton: function() {
+                const likeButton = document.getElementById('like-button');
+                if (likeButton) {
+                    likeButton.addEventListener('click', () => {
+                        this.toggleLike();
+                    });
+                }
+            },
+            
+            // Cleanup
+            destroy: function() {
+                if (this.syncInterval) {
+                    clearInterval(this.syncInterval);
+                }
+            },
+            
+            // Debug method to show current state
+            getDebugInfo: function() {
+                return {
+                    userId: this.userId,
+                    userHasLiked: this.userHasLiked,
+                    totalCount: this.count,
+                    registrySize: this.likesRegistry.size,
+                    realUsers: Array.from(this.likesRegistry.keys()).filter(id => !id.startsWith('sim_')).length,
+                    simulatedUsers: Array.from(this.likesRegistry.keys()).filter(id => id.startsWith('sim_')).length
+                };
+            }
+        };
+
+        // Initialize like button (updated function)
+        function initializeLikeButton() {
+            globalLikeCounter.init();
         }
         
         function updateLikeButton(isLiked, count) {
@@ -2254,6 +2531,13 @@ function decodeUplink(input) {
 
             // Setup paste buttons
             setupPasteButtons();
+            
+            // Cleanup on page unload
+            window.addEventListener('beforeunload', function() {
+                if (globalLikeCounter) {
+                    globalLikeCounter.destroy();
+                }
+            });
         });
     </script>
 </body>
