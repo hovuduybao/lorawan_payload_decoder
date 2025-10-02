@@ -1,10 +1,24 @@
 <!DOCTYPE html>
 <html lang="en" data-theme="dark">
 
-<head>
+    <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>LoRaWAN Payload Decoder | HO Vu Duy Bao - Wi6labs</title>
+    
+    <!-- Favicon -->
+    <link rel="icon" type="image/x-icon" href="https://i.pinimg.com/736x/5f/82/3d/5f823d7dda4eab0bb4aef15dfe0dde4b.jpg">
+    <link rel="shortcut icon" type="image/x-icon" href="https://i.pinimg.com/736x/5f/82/3d/5f823d7dda4eab0bb4aef15dfe0dde4b.jpg">
+    <link rel="apple-touch-icon" href="https://i.pinimg.com/736x/5f/82/3d/5f823d7dda4eab0bb4aef15dfe0dde4b.jpg">
+    <link rel="apple-touch-icon" sizes="57x57" href="https://i.pinimg.com/736x/5f/82/3d/5f823d7dda4eab0bb4aef15dfe0dde4b.jpg">
+    <link rel="apple-touch-icon" sizes="72x72" href="https://i.pinimg.com/736x/5f/82/3d/5f823d7dda4eab0bb4aef15dfe0dde4b.jpg">
+    <link rel="apple-touch-icon" sizes="76x76" href="https://i.pinimg.com/736x/5f/82/3d/5f823d7dda4eab0bb4aef15dfe0dde4b.jpg">
+    <link rel="apple-touch-icon" sizes="114x114" href="https://i.pinimg.com/736x/5f/82/3d/5f823d7dda4eab0bb4aef15dfe0dde4b.jpg">
+    <link rel="apple-touch-icon" sizes="120x120" href="https://i.pinimg.com/736x/5f/82/3d/5f823d7dda4eab0bb4aef15dfe0dde4b.jpg">
+    <link rel="apple-touch-icon" sizes="144x144" href="https://i.pinimg.com/736x/5f/82/3d/5f823d7dda4eab0bb4aef15dfe0dde4b.jpg">
+    <link rel="apple-touch-icon" sizes="152x152" href="https://i.pinimg.com/736x/5f/82/3d/5f823d7dda4eab0bb4aef15dfe0dde4b.jpg">
+    <link rel="apple-touch-icon" sizes="180x180" href="https://i.pinimg.com/736x/5f/82/3d/5f823d7dda4eab0bb4aef15dfe0dde4b.jpg">
+    
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <style>
@@ -242,6 +256,34 @@
             text-align: center;
         }
 
+        /* Connection status indicator */
+        .connection-status {
+            font-size: 0.75rem;
+            padding: 0.25rem 0.75rem;
+            border-radius: 12px;
+            margin-left: 0.5rem;
+            transition: all 0.3s ease;
+            display: inline-block;
+        }
+
+        .connection-status.connecting {
+            background: rgba(251, 191, 36, 0.2);
+            color: var(--warning-color);
+            border: 1px solid rgba(251, 191, 36, 0.3);
+        }
+
+        .connection-status.online {
+            background: rgba(34, 197, 94, 0.2);
+            color: var(--success-color);
+            border: 1px solid rgba(34, 197, 94, 0.3);
+        }
+
+        .connection-status.offline {
+            background: rgba(248, 113, 113, 0.2);
+            color: var(--error-color);
+            border: 1px solid rgba(248, 113, 113, 0.3);
+        }
+
         /* Responsive adjustments for like button */
         @media (max-width: 768px) {
             .header-content {
@@ -256,11 +298,18 @@
 
             .header-actions {
                 order: 2;
+                flex-direction: column;
+                gap: 0.5rem;
             }
 
             .like-button {
                 padding: 0.6rem 1rem;
                 font-size: 0.85rem;
+            }
+
+            .connection-status {
+                font-size: 0.7rem;
+                margin-left: 0;
             }
         }
 
@@ -1070,6 +1119,9 @@
                     <div class="like-button" id="like-button" title="Like this decoder tool">
                         <i class="far fa-heart like-icon" id="like-icon"></i>
                         <span class="like-count" id="like-count">1,973</span>
+                    </div>
+                    <div class="connection-status connecting" id="connection-status">
+                        Initializing...
                     </div>
                 </div>
             </div>
@@ -1982,132 +2034,151 @@ function decodeUplink(input) {
         // Global Like Counter Configuration for Vercel Deployment
         const LIKE_COUNTER_CONFIG = {
             INITIAL_COUNT: 1973, // Easily configurable initial count
-            GLOBAL_STORAGE_KEY: 'lorawan_decoder_global_likes_v2',
+            FIREBASE_URL: 'https://lorawan-decoder-default-rtdb.firebaseio.com/', // Free Firebase Realtime DB
+            LIKES_PATH: 'likes/total',
             USER_LIKED_KEY: 'decoder_user_liked',
             USER_ID_KEY: 'decoder_user_id',
-            LIKES_REGISTRY_KEY: 'decoder_likes_registry',
-            LAST_SYNC_KEY: 'decoder_last_sync',
-            SYNC_INTERVAL: 15000, // Sync every 15 seconds
-            BASE_URL: window.location.origin, // For deployment URL detection
-            VERSION: '2.0' // Version for cache busting
+            FALLBACK_STORAGE_KEY: 'lorawan_decoder_fallback_likes',
+            RETRY_INTERVAL: 5000, // Retry connection every 5 seconds
+            TIMEOUT: 10000 // Request timeout
         };
 
-        // Distributed Like Counter System for Vercel Deployment
+        // Real-time Global Like Counter for Vercel Deployment
         let globalLikeCounter = {
             count: 0,
             userHasLiked: false,
             userId: null,
-            syncInterval: null,
-            likesRegistry: new Map(),
+            isOnline: false,
+            retryInterval: null,
+            eventSource: null,
             
             init: function() {
-                this.generateOrLoadUserId();
-                this.loadLikesRegistry();
+                this.generateUserId();
                 this.loadUserState();
-                this.calculateGlobalCount();
-                this.startSync();
+                this.connectToFirebase();
                 this.setupLikeButton();
-                this.updateUI();
+                this.setupConnectionMonitoring();
             },
             
             // Generate unique user ID for tracking individual users
-            generateOrLoadUserId: function() {
+            generateUserId: function() {
                 let userId = getStorage(LIKE_COUNTER_CONFIG.USER_ID_KEY);
                 if (!userId) {
-                    // Create unique user ID based on browser fingerprint + timestamp
-                    const fingerprint = this.generateBrowserFingerprint();
-                    const timestamp = Date.now();
-                    userId = btoa(fingerprint + timestamp).replace(/[^a-zA-Z0-9]/g, '').substring(0, 16);
+                    userId = 'user_' + Date.now() + '_' + Math.random().toString(36).substring(2, 15);
                     setStorage(LIKE_COUNTER_CONFIG.USER_ID_KEY, userId);
                 }
                 this.userId = userId;
             },
             
-            // Generate browser fingerprint for unique user identification
-            generateBrowserFingerprint: function() {
-                const canvas = document.createElement('canvas');
-                const ctx = canvas.getContext('2d');
-                ctx.textBaseline = 'top';
-                ctx.font = '14px Arial';
-                ctx.fillText('Browser fingerprint', 2, 2);
-                
-                return [
-                    navigator.userAgent,
-                    navigator.language,
-                    screen.width + 'x' + screen.height,
-                    new Date().getTimezoneOffset(),
-                    canvas.toDataURL(),
-                    navigator.hardwareConcurrency || 'unknown'
-                ].join('|');
-            },
-            
-            // Load the distributed likes registry
-            loadLikesRegistry: function() {
-                try {
-                    const registryData = getStorage(LIKE_COUNTER_CONFIG.LIKES_REGISTRY_KEY);
-                    if (registryData) {
-                        const parsed = JSON.parse(registryData);
-                        this.likesRegistry = new Map(Object.entries(parsed));
-                    }
-                } catch (e) {
-                    console.warn('Failed to load likes registry:', e);
-                    this.likesRegistry = new Map();
-                }
-                
-                // Clean old entries (older than 30 days)
-                this.cleanOldEntries();
-            },
-            
-            // Save the likes registry
-            saveLikesRegistry: function() {
-                try {
-                    const registryObj = Object.fromEntries(this.likesRegistry);
-                    setStorage(LIKE_COUNTER_CONFIG.LIKES_REGISTRY_KEY, JSON.stringify(registryObj));
-                    setStorage(LIKE_COUNTER_CONFIG.LAST_SYNC_KEY, Date.now().toString());
-                } catch (e) {
-                    console.warn('Failed to save likes registry:', e);
-                }
-            },
-            
-            // Clean entries older than 30 days
-            cleanOldEntries: function() {
-                const thirtyDaysAgo = Date.now() - (30 * 24 * 60 * 60 * 1000);
-                for (const [userId, data] of this.likesRegistry.entries()) {
-                    if (data.timestamp < thirtyDaysAgo) {
-                        this.likesRegistry.delete(userId);
-                    }
-                }
-            },
-            
-            // Load individual user state
+            // Load user's like state from local storage
             loadUserState: function() {
                 this.userHasLiked = getStorage(LIKE_COUNTER_CONFIG.USER_LIKED_KEY) === 'true';
+            },
+            
+            // Save user's like state to local storage
+            saveUserState: function() {
+                setStorage(LIKE_COUNTER_CONFIG.USER_LIKED_KEY, this.userHasLiked.toString());
+            },
+            
+            // Connect to Firebase Realtime Database
+            connectToFirebase: function() {
+                this.showConnectionStatus('Connecting to global counter...');
                 
-                // Sync with registry
-                if (this.likesRegistry.has(this.userId)) {
-                    const userData = this.likesRegistry.get(this.userId);
-                    this.userHasLiked = userData.liked;
-                } else if (this.userHasLiked) {
-                    // Add to registry if user has liked but not in registry
-                    this.likesRegistry.set(this.userId, {
-                        liked: true,
-                        timestamp: Date.now()
+                // First, get current count
+                this.fetchCurrentCount()
+                    .then(() => {
+                        this.setupRealTimeListener();
+                        this.isOnline = true;
+                        this.showConnectionStatus('Connected to global counter', true);
+                    })
+                    .catch((error) => {
+                        console.warn('Failed to connect to Firebase:', error);
+                        this.handleConnectionError();
                     });
+            },
+            
+            // Fetch current count from Firebase
+            fetchCurrentCount: function() {
+                return new Promise((resolve, reject) => {
+                    const controller = new AbortController();
+                    const timeoutId = setTimeout(() => controller.abort(), LIKE_COUNTER_CONFIG.TIMEOUT);
+                    
+                    fetch(`${LIKE_COUNTER_CONFIG.FIREBASE_URL}${LIKE_COUNTER_CONFIG.LIKES_PATH}.json`, {
+                        signal: controller.signal
+                    })
+                    .then(response => {
+                        clearTimeout(timeoutId);
+                        if (!response.ok) throw new Error(`HTTP ${response.status}`);
+                        return response.json();
+                    })
+                    .then(data => {
+                        // If no data exists, initialize with our starting count
+                        if (data === null) {
+                            this.initializeFirebaseCount();
+                        } else {
+                            this.count = parseInt(data) || LIKE_COUNTER_CONFIG.INITIAL_COUNT;
+                        }
+                        this.updateUI();
+                        resolve();
+                    })
+                    .catch(error => {
+                        clearTimeout(timeoutId);
+                        reject(error);
+                    });
+                });
+            },
+            
+            // Initialize Firebase with starting count
+            initializeFirebaseCount: function() {
+                fetch(`${LIKE_COUNTER_CONFIG.FIREBASE_URL}${LIKE_COUNTER_CONFIG.LIKES_PATH}.json`, {
+                    method: 'PUT',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(LIKE_COUNTER_CONFIG.INITIAL_COUNT)
+                })
+                .then(() => {
+                    this.count = LIKE_COUNTER_CONFIG.INITIAL_COUNT;
+                    this.updateUI();
+                })
+                .catch(error => console.warn('Failed to initialize Firebase count:', error));
+            },
+            
+            // Setup real-time listener using Server-Sent Events
+            setupRealTimeListener: function() {
+                try {
+                    // Use Firebase REST API with streaming
+                    const url = `${LIKE_COUNTER_CONFIG.FIREBASE_URL}${LIKE_COUNTER_CONFIG.LIKES_PATH}.json?print=silent`;
+                    
+                    // Poll for changes every 2 seconds (Firebase free tier limitation)
+                    this.pollInterval = setInterval(() => {
+                        this.fetchCurrentCount().catch(() => {
+                            // Silently handle errors during polling
+                        });
+                    }, 2000);
+                    
+                } catch (error) {
+                    console.warn('Failed to setup real-time listener:', error);
+                    this.handleConnectionError();
                 }
             },
             
-            // Calculate global count from all users in registry
-            calculateGlobalCount: function() {
-                let totalLikes = LIKE_COUNTER_CONFIG.INITIAL_COUNT;
+            // Handle connection errors with fallback
+            handleConnectionError: function() {
+                this.isOnline = false;
+                this.showConnectionStatus('Using offline mode', false);
                 
-                // Count all likes in registry
-                for (const [userId, data] of this.likesRegistry.entries()) {
-                    if (data.liked) {
-                        totalLikes++;
-                    }
+                // Load fallback count from local storage
+                const fallbackCount = getStorage(LIKE_COUNTER_CONFIG.FALLBACK_STORAGE_KEY);
+                if (fallbackCount) {
+                    this.count = parseInt(fallbackCount);
+                } else {
+                    this.count = LIKE_COUNTER_CONFIG.INITIAL_COUNT;
                 }
+                this.updateUI();
                 
-                this.count = totalLikes;
+                // Retry connection periodically
+                this.retryInterval = setInterval(() => {
+                    this.connectToFirebase();
+                }, LIKE_COUNTER_CONFIG.RETRY_INTERVAL);
             },
             
             // Toggle user's like state
@@ -2115,146 +2186,104 @@ function decodeUplink(input) {
                 const wasLiked = this.userHasLiked;
                 this.userHasLiked = !wasLiked;
                 
-                // Update registry
-                this.likesRegistry.set(this.userId, {
-                    liked: this.userHasLiked,
-                    timestamp: Date.now()
-                });
+                // Save user state immediately
+                this.saveUserState();
                 
-                // Recalculate global count
-                this.calculateGlobalCount();
-                
-                // Save states
-                this.saveLikesRegistry();
-                setStorage(LIKE_COUNTER_CONFIG.USER_LIKED_KEY, this.userHasLiked.toString());
-                
-                // Update UI
+                // Update count and UI optimistically
+                const increment = this.userHasLiked ? 1 : -1;
+                this.count = Math.max(0, this.count + increment);
                 this.updateUI();
                 
-                // Show feedback
+                // Show immediate feedback
                 showLikeFeedback(this.userHasLiked);
                 
-                // Broadcast change
-                this.broadcastChange();
-                
-                // Log for debugging (remove in production)
-                console.log(`User ${this.userId} ${this.userHasLiked ? 'liked' : 'unliked'}. Total: ${this.count}`);
-            },
-            
-            // Start periodic sync to detect changes from other users
-            startSync: function() {
-                // Initial sync
-                this.syncWithOtherUsers();
-                
-                // Periodic sync
-                this.syncInterval = setInterval(() => {
-                    this.syncWithOtherUsers();
-                }, LIKE_COUNTER_CONFIG.SYNC_INTERVAL);
-                
-                // Listen for storage changes (other tabs)
-                window.addEventListener('storage', (e) => {
-                    if (e.key === LIKE_COUNTER_CONFIG.LIKES_REGISTRY_KEY) {
-                        this.loadLikesRegistry();
-                        this.calculateGlobalCount();
-                        this.updateUI();
-                    }
-                });
-                
-                // Sync when page becomes visible (user returns to tab)
-                document.addEventListener('visibilitychange', () => {
-                    if (!document.hidden) {
-                        this.syncWithOtherUsers();
-                    }
-                });
-            },
-            
-            // Simulate detecting new users and their likes
-            syncWithOtherUsers: function() {
-                const lastSync = parseInt(getStorage(LIKE_COUNTER_CONFIG.LAST_SYNC_KEY) || '0');
-                const now = Date.now();
-                const timeSinceSync = now - lastSync;
-                
-                // Only simulate new users if enough time has passed (5+ minutes)
-                if (timeSinceSync > 5 * 60 * 1000) {
-                    const hoursAway = timeSinceSync / (1000 * 60 * 60);
-                    
-                    // Simulate new users (0-2 per hour on average)
-                    const newUsers = Math.floor(Math.random() * Math.max(1, hoursAway * 2));
-                    
-                    if (newUsers > 0) {
-                        this.simulateNewUsers(newUsers);
-                    }
+                // Sync with Firebase
+                if (this.isOnline) {
+                    this.syncWithFirebase(increment);
+                } else {
+                    // Save to fallback storage
+                    setStorage(LIKE_COUNTER_CONFIG.FALLBACK_STORAGE_KEY, this.count.toString());
                 }
             },
             
-            // Simulate new users liking the app
-            simulateNewUsers: function(count) {
-                let actualNewLikes = 0;
+            // Sync like change with Firebase
+            syncWithFirebase: function(increment) {
+                // Use Firebase transaction-like approach with retry logic
+                const maxRetries = 3;
+                let retries = 0;
                 
-                for (let i = 0; i < count; i++) {
-                    // Generate simulated user ID
-                    const simulatedUserId = 'sim_' + Math.random().toString(36).substring(2, 15);
-                    
-                    // 70% chance they like it
-                    if (Math.random() < 0.7 && !this.likesRegistry.has(simulatedUserId)) {
-                        this.likesRegistry.set(simulatedUserId, {
-                            liked: true,
-                            timestamp: Date.now() - Math.random() * 60 * 60 * 1000 // Random time in last hour
+                const attemptSync = () => {
+                    // First get current value, then update
+                    fetch(`${LIKE_COUNTER_CONFIG.FIREBASE_URL}${LIKE_COUNTER_CONFIG.LIKES_PATH}.json`)
+                    .then(response => response.json())
+                    .then(currentCount => {
+                        const newCount = Math.max(0, (parseInt(currentCount) || LIKE_COUNTER_CONFIG.INITIAL_COUNT) + increment);
+                        
+                        return fetch(`${LIKE_COUNTER_CONFIG.FIREBASE_URL}${LIKE_COUNTER_CONFIG.LIKES_PATH}.json`, {
+                            method: 'PUT',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify(newCount)
                         });
-                        actualNewLikes++;
-                    }
-                }
+                    })
+                    .then(response => {
+                        if (!response.ok) throw new Error(`HTTP ${response.status}`);
+                        // Sync successful - update fallback storage
+                        setStorage(LIKE_COUNTER_CONFIG.FALLBACK_STORAGE_KEY, this.count.toString());
+                    })
+                    .catch(error => {
+                        console.warn('Failed to sync with Firebase:', error);
+                        retries++;
+                        if (retries < maxRetries) {
+                            setTimeout(attemptSync, 1000 * retries); // Exponential backoff
+                        } else {
+                            // Fall back to local storage
+                            setStorage(LIKE_COUNTER_CONFIG.FALLBACK_STORAGE_KEY, this.count.toString());
+                        }
+                    });
+                };
                 
-                if (actualNewLikes > 0) {
-                    this.calculateGlobalCount();
-                    this.saveLikesRegistry();
-                    this.updateUI();
-                    this.showGlobalUpdateNotification(actualNewLikes);
-                }
+                attemptSync();
             },
             
-            // Show notification for global updates
-            showGlobalUpdateNotification: function(increment) {
-                const notification = document.createElement('div');
-                notification.style.cssText = `
-                    position: fixed;
-                    top: 80px;
-                    right: 20px;
-                    background: rgba(34, 197, 94, 0.9);
-                    color: white;
-                    padding: 8px 16px;
-                    border-radius: 20px;
-                    font-size: 12px;
-                    font-weight: 500;
-                    z-index: 9999;
-                    box-shadow: 0 2px 8px rgba(0,0,0,0.1);
-                    transform: translateX(100%);
-                    transition: all 0.3s ease;
-                    backdrop-filter: blur(10px);
-                `;
-                notification.innerHTML = `<i class="fas fa-heart" style="color: #ff6b9d;"></i> +${increment} new ${increment === 1 ? 'like' : 'likes'}`;
-                
-                document.body.appendChild(notification);
-                
-                setTimeout(() => notification.style.transform = 'translateX(0)', 10);
-                setTimeout(() => {
-                    notification.style.transform = 'translateX(100%)';
-                    setTimeout(() => notification.remove(), 300);
-                }, 2500);
-            },
-            
-            // Update UI
+            // Update UI elements
             updateUI: function() {
                 updateLikeButton(this.userHasLiked, this.count);
             },
             
-            // Broadcast changes to other tabs
-            broadcastChange: function() {
-                window.dispatchEvent(new StorageEvent('storage', {
-                    key: LIKE_COUNTER_CONFIG.LIKES_REGISTRY_KEY,
-                    newValue: JSON.stringify(Object.fromEntries(this.likesRegistry)),
-                    url: window.location.href
-                }));
+            // Show connection status
+            showConnectionStatus: function(message, isSuccess = null) {
+                const statusElement = document.getElementById('connection-status');
+                if (statusElement) {
+                    statusElement.textContent = message;
+                    statusElement.className = `connection-status ${isSuccess === true ? 'online' : isSuccess === false ? 'offline' : 'connecting'}`;
+                }
+                
+                // Auto-hide after 3 seconds if successful
+                if (isSuccess === true) {
+                    setTimeout(() => {
+                        if (statusElement) {
+                            statusElement.style.opacity = '0';
+                            setTimeout(() => {
+                                if (statusElement) statusElement.style.display = 'none';
+                            }, 300);
+                        }
+                    }, 3000);
+                }
+            },
+            
+            // Setup connection monitoring
+            setupConnectionMonitoring: function() {
+                // Monitor online/offline status
+                window.addEventListener('online', () => {
+                    if (!this.isOnline) {
+                        this.connectToFirebase();
+                    }
+                });
+                
+                window.addEventListener('offline', () => {
+                    this.isOnline = false;
+                    this.showConnectionStatus('Offline - using local data', false);
+                });
             },
             
             // Setup like button click handler
@@ -2267,23 +2296,17 @@ function decodeUplink(input) {
                 }
             },
             
-            // Cleanup
+            // Cleanup resources
             destroy: function() {
-                if (this.syncInterval) {
-                    clearInterval(this.syncInterval);
+                if (this.retryInterval) {
+                    clearInterval(this.retryInterval);
                 }
-            },
-            
-            // Debug method to show current state
-            getDebugInfo: function() {
-                return {
-                    userId: this.userId,
-                    userHasLiked: this.userHasLiked,
-                    totalCount: this.count,
-                    registrySize: this.likesRegistry.size,
-                    realUsers: Array.from(this.likesRegistry.keys()).filter(id => !id.startsWith('sim_')).length,
-                    simulatedUsers: Array.from(this.likesRegistry.keys()).filter(id => id.startsWith('sim_')).length
-                };
+                if (this.pollInterval) {
+                    clearInterval(this.pollInterval);
+                }
+                if (this.eventSource) {
+                    this.eventSource.close();
+                }
             }
         };
 
