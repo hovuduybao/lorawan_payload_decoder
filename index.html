@@ -1033,6 +1033,135 @@
             color: var(--json-punctuation-color);
         }
 
+        /* JavaScript syntax highlighting */
+        .js-keyword {
+            color: #0969da;
+            font-weight: 600;
+        }
+
+        .js-function {
+            color: #8250df;
+            font-weight: 600;
+        }
+
+        .js-param {
+            color: #953800;
+        }
+
+        .js-variable {
+            color: #0550ae;
+        }
+
+        .js-property {
+            color: #116329;
+        }
+
+        .js-method {
+            color: #8250df;
+        }
+
+        .js-string {
+            color: #0a3069;
+        }
+
+        .js-number {
+            color: #0550ae;
+            font-weight: 500;
+        }
+
+        .js-comment {
+            color: #656d76;
+            font-style: italic;
+        }
+
+        /* Dark mode JavaScript syntax highlighting */
+        [data-theme="dark"] .js-keyword {
+            color: #79c0ff;
+            font-weight: 600;
+        }
+
+        [data-theme="dark"] .js-function {
+            color: #d2a8ff;
+            font-weight: 600;
+        }
+
+        [data-theme="dark"] .js-param {
+            color: #ffa657;
+        }
+
+        [data-theme="dark"] .js-variable {
+            color: #79c0ff;
+        }
+
+        [data-theme="dark"] .js-property {
+            color: #7ee787;
+        }
+
+        [data-theme="dark"] .js-method {
+            color: #d2a8ff;
+        }
+
+        [data-theme="dark"] .js-string {
+            color: #a5d6ff;
+        }
+
+        [data-theme="dark"] .js-number {
+            color: #79c0ff;
+            font-weight: 500;
+        }
+
+        [data-theme="dark"] .js-comment {
+            color: #8b949e;
+            font-style: italic;
+        }
+
+        /* Format badges */
+        .format-badge {
+            display: inline-flex;
+            align-items: center;
+            padding: 0.25rem 0.75rem;
+            border-radius: 12px;
+            font-size: 0.75rem;
+            font-weight: 600;
+            margin-left: 0.5rem;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .format-badge.ttn-v3 {
+            background: linear-gradient(135deg, #059669, #10b981);
+            color: white;
+            box-shadow: 0 2px 4px rgba(5, 150, 105, 0.3);
+        }
+
+        .format-badge.chirpstack {
+            background: linear-gradient(135deg, #3b82f6, #6366f1);
+            color: white;
+            box-shadow: 0 2px 4px rgba(59, 130, 246, 0.3);
+        }
+
+        .format-badge.ttn-v2 {
+            background: linear-gradient(135deg, #f59e0b, #f97316);
+            color: white;
+            box-shadow: 0 2px 4px rgba(245, 158, 11, 0.3);
+        }
+
+        /* Enhanced example titles */
+        .example-title {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            font-weight: 600;
+            color: var(--text-primary);
+            margin-bottom: 0.75rem;
+            font-size: 1rem;
+        }
+
+        .example-title i {
+            color: var(--primary-color);
+            font-size: 1.1rem;
+        }
+
         /* Copy button styles */
         .copy-btn, .paste-btn {
             background: none;
@@ -1249,16 +1378,44 @@
                     </h2>
                     <div class="formats-grid">
                         <div class="example-card">
-                            <div class="example-title">LoRa Alliance Format:</div>
-                            <div class="example-code">function decodeUplink(input) { return { data: { temp: input.bytes[0] }, warnings: [], errors: [] }; }</div>
+                            <div class="example-title">
+                                <i class="fab fa-js-square"></i>
+                                LoRa Alliance Format
+                                <span class="format-badge ttn-v3">Official</span>
+                            </div>
+                            <div class="example-code"><span class="js-keyword">function</span> <span class="js-function">decodeUplink</span>(<span class="js-param">input</span>) {<br>
+&nbsp;&nbsp;&nbsp;&nbsp;<span class="js-keyword">return</span> {<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="js-property">data</span>: {<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="js-property">temp</span>: <span class="js-variable">input</span>.<span class="js-property">bytes</span>[<span class="js-number">0</span>]<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;},<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="js-property">warnings</span>: [],<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="js-property">errors</span>: []<br>
+&nbsp;&nbsp;&nbsp;&nbsp;};<br>
+}</div>
                         </div>
                         <div class="example-card">
-                            <div class="example-title">ChirpStack Format:</div>
-                            <div class="example-code">function Decode(fPort, bytes) { return { temperature: bytes[0] }; }</div>
+                            <div class="example-title">
+                                <i class="fab fa-js-square"></i>
+                                ChirpStack Format
+                                <span class="format-badge chirpstack">ChirpStack</span>
+                            </div>
+                            <div class="example-code"><span class="js-keyword">function</span> <span class="js-function">Decode</span>(<span class="js-param">fPort</span>, <span class="js-param">bytes</span>) {<br>
+&nbsp;&nbsp;&nbsp;&nbsp;<span class="js-keyword">return</span> {<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="js-property">temperature</span>: <span class="js-variable">bytes</span>[<span class="js-number">0</span>]<br>
+&nbsp;&nbsp;&nbsp;&nbsp;};<br>
+}</div>
                         </div>
                         <div class="example-card">
-                            <div class="example-title">TTN Legacy Format:</div>
-                            <div class="example-code">function Decoder(bytes, port) { return { temperature: bytes[0] }; }</div>
+                            <div class="example-title">
+                                <i class="fab fa-js-square"></i>
+                                TTN Legacy Format
+                                <span class="format-badge ttn-v2">TTN</span>
+                            </div>
+                            <div class="example-code"><span class="js-keyword">function</span> <span class="js-function">Decoder</span>(<span class="js-param">bytes</span>, <span class="js-param">port</span>) {<br>
+&nbsp;&nbsp;&nbsp;&nbsp;<span class="js-keyword">return</span> {<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="js-property">temperature</span>: <span class="js-variable">bytes</span>[<span class="js-number">0</span>]<br>
+&nbsp;&nbsp;&nbsp;&nbsp;};<br>
+}</div>
                         </div>
                     </div>
                 </div>
